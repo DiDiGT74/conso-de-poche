@@ -89,6 +89,27 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .legend span{display:inline-flex;align-items:center;gap:6px}
 .legend span::before{content:"";width:10px;height:10px;border-radius:3px;background:var(--c)}
 .cap{font-size:.8rem;color:var(--mist);min-height:1.3em;margin-top:6px;line-height:1.45}
+/* Tableau de lecture sous les graphiques : toujours là, mêmes colonnes, valeurs de la barre ou du point touché */
+.pick{margin-top:10px;background:var(--navy);border-radius:14px;padding:6px 10px 8px;min-height:62px}
+.pick table{width:100%;border-collapse:collapse}
+.pick th{font-size:.64rem;line-height:1.2;color:var(--mist);font-weight:600;text-transform:uppercase;letter-spacing:.04em;text-align:right;vertical-align:bottom;padding:2px 3px 4px}
+.pick td{font-size:.95rem;font-weight:700;text-align:right;white-space:nowrap;padding:1px 3px;vertical-align:top}
+.pick th:first-child,.pick td:first-child{text-align:left;padding-left:0}
+.pick th:last-child,.pick td:last-child{padding-right:0}
+.pick td small{display:block;font-size:.7rem;font-weight:500;color:var(--mist);min-height:1.2em}
+.pick .dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--c);margin-right:5px;vertical-align:1px}
+.pick .na{color:var(--mist);font-weight:500}
+.chart svg{touch-action:pan-y}
+.line.tap{cursor:pointer}
+.line.tap .nm>.go{color:var(--blue-soft);font-weight:700;margin-left:4px}
+.line.tap:active{background:var(--navy)}
+/* Fiche appareil */
+.sheet{position:fixed;inset:0;z-index:10;background:rgba(4,9,18,.66);display:flex;align-items:flex-end;justify-content:center}
+.sheetbox{width:100%;max-width:520px;max-height:90dvh;overflow-y:auto;overscroll-behavior:contain;background:var(--night);border:1px solid var(--line);border-bottom:0;border-radius:22px 22px 0 0;
+  padding:16px max(18px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(18px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:12px;animation:sheetIn 260ms var(--ease-out)}
+@keyframes sheetIn{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+.sheetbox h2{font-size:1rem;font-weight:600;margin:0}
+.xbtn{border:0;border-radius:50%;width:36px;height:36px;flex:none;background:var(--navy);color:var(--ice);font-size:1.2rem;line-height:1}
 .tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .tile{background:var(--navy);border-radius:14px;padding:12px 14px;display:grid;gap:3px;min-width:0}
 .tile .l{font-size:.72rem;color:var(--mist);font-weight:600;letter-spacing:.04em;text-transform:uppercase}
@@ -186,7 +207,7 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
 @media (max-width:360px){.fig b{font-size:.92rem}.tile .v{font-size:1.05rem}}
 @media (prefers-reduced-motion:reduce){
   .ring .arc,.ring::before,.meter i{transition:none}
-  .view.fade,.view.fade.fromR,.view.fade.fromL,.shake{animation:none}
+  .view.fade,.view.fade.fromR,.view.fade.fromL,.shake,.sheetbox{animation:none}
   .btn:active,.pad button:active,.pill:active{transform:none}
 }
 </style>
@@ -251,8 +272,9 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
 
     <section class="curve">
       <h2>Dernières 24 heures</h2>
-      <div id="cToday"><p class="empty">La courbe apparaît dès que les relevés sont chargés.</p></div>
+      <div class="chart" id="cToday"><p class="empty">La courbe apparaît dès que les relevés sont chargés.</p></div>
       <div class="legend"><span style="--c:var(--blue)">Conso maison</span><span style="--c:var(--sun)">Production solaire</span></div>
+      <div class="pick" id="cTodayPick" aria-live="polite"></div>
     </section>
 
     <section class="block">
@@ -262,6 +284,16 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
         <div class="tile"><span class="l">Coût</span><span class="v money" id="yCost">—</span><span class="n" id="yCostN">&nbsp;</span></div>
         <div class="tile"><span class="l">Acheté au réseau</span><span class="v" id="yBuy">—</span><span class="n" id="yBuyN">&nbsp;</span></div>
         <div class="tile"><span class="l">Produit (solaire)</span><span class="v" id="ySol">—</span><span class="n money" id="ySolN">&nbsp;</span></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2><span id="ajTitle">Aujourd'hui</span> <span class="tempo" id="ajTempo" hidden></span></h2>
+      <div class="tiles">
+        <div class="tile"><span class="l">Conso maison</span><span class="v" id="ajCons">—</span><span class="n" id="ajConsN">&nbsp;</span></div>
+        <div class="tile"><span class="l">Coût</span><span class="v money" id="ajCost">—</span><span class="n" id="ajCostN">&nbsp;</span></div>
+        <div class="tile"><span class="l">Acheté au réseau</span><span class="v" id="ajBuy">—</span><span class="n" id="ajBuyN">&nbsp;</span></div>
+        <div class="tile"><span class="l">Produit (solaire)</span><span class="v" id="ajSol">—</span><span class="n money" id="ajSolN">&nbsp;</span></div>
       </div>
     </section>
 
@@ -288,9 +320,9 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
   <div class="view" id="vHist" hidden>
     <section class="curve">
       <h2>30 derniers jours</h2>
-      <div id="cDays"><p class="empty">Chargement…</p></div>
+      <div class="chart" id="cDays"><p class="empty">Chargement…</p></div>
       <div class="legend"><span style="--c:var(--blue)">Acheté au réseau</span><span style="--c:var(--sun)">Solaire</span></div>
-      <div class="cap" id="cDaysCap">Touche une barre pour voir le détail.</div>
+      <div class="pick" id="cDaysPick" aria-live="polite"></div>
     </section>
 
     <section class="curve">
@@ -298,9 +330,10 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
         <h2>Mois par mois</h2>
         <div class="seg" id="segM" role="group" aria-label="Unité"><button type="button" data-v="eur" aria-pressed="true">€</button><button type="button" data-v="kwh" aria-pressed="false">kWh</button></div>
       </div>
-      <div id="cMonths"><p class="empty">Chargement…</p></div>
+      <div class="chart" id="cMonths"><p class="empty">Chargement…</p></div>
       <div class="legend"><span style="--c:var(--blue)">Cette année</span><span style="--c:#5A6E92">Un an plus tôt</span></div>
-      <div class="cap" id="cMonthsCap">Achats au réseau. Le mois en cours est partiel.</div>
+      <div class="pick" id="cMonthsPick" aria-live="polite"></div>
+      <p class="foot">Achats au réseau. Le mois en cours est partiel.</p>
     </section>
 
     <section class="block">
@@ -315,6 +348,17 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
       <div id="devRows" style="margin-top:6px"><p class="empty">Chargement…</p></div>
       <p class="foot" id="devNote"></p>
     </section>
+  </div>
+
+  <!-- Fiche d'un appareil (ouverte depuis « Par appareil ») -->
+  <div class="sheet" id="devSheet" hidden role="dialog" aria-modal="true" aria-labelledby="dsTitle">
+    <div class="sheetbox">
+      <div class="curvehead"><h2 id="dsTitle">Appareil</h2><button type="button" class="xbtn" id="dsClose" aria-label="Fermer">✕</button></div>
+      <div class="seg" id="segD" role="group" aria-label="Période" style="align-self:flex-start"><button type="button" data-v="day" aria-pressed="true">Par jour</button><button type="button" data-v="month" aria-pressed="false">Par mois</button></div>
+      <div class="chart" id="dsChart"><p class="empty">Chargement…</p></div>
+      <div class="pick" id="dsPick" aria-live="polite"></div>
+      <p class="foot" id="dsNote" style="margin:0"></p>
+    </div>
   </div>
 
   <!-- SAISIES (Adrien seulement) -->
@@ -430,6 +474,23 @@ const todayKey = () => { const n = new Date(); return `${n.getFullYear()}-${pad2
 const addDays = (k, n) => { const d = dOf(k); d.setUTCDate(d.getUTCDate()+n); return `${d.getUTCFullYear()}-${pad2(d.getUTCMonth()+1)}-${pad2(d.getUTCDate())}`; };
 const dec = s => { s = String(s || "").replace(/\s/g, "").replace(",", "."); if (s === "") return null; const v = Number(s); return isNaN(v) ? NaN : v; };
 const TCOL = {Bleu:"var(--t-bleu)", Blanc:"var(--t-blanc)", Rouge:"var(--t-rouge)"};
+const JOURS_C = ["dim.","lun.","mar.","mer.","jeu.","ven.","sam."];
+const dayShort = k => `${JOURS_C[dOf(k).getUTCDay()]} ${shortDay(k)}`;
+const NA = '<span class="na">—</span>';
+const n1 = (v, d=1) => ok_(v) ? fr(v, d) : NA;
+const tdot = c => c ? `<span class="dot" style="--c:${TCOL[c] || "var(--t-bleu)"}"></span>${c}` : NA;
+// Tableau de lecture : cols = [[en-tête, valeur (HTML), montant ?], …] ; même structure à chaque sélection, donc même place.
+function pickTable(el, cols){
+  el.innerHTML = `<table><thead><tr>${cols.map(c => `<th scope="col">${c[0]}</th>`).join("")}</tr></thead><tbody><tr>${cols.map(c => `<td${c[2] ? ' class="money"' : ""}>${c[1]}</td>`).join("")}</tr></tbody></table>`;
+}
+// Sélection au doigt (toucher ou glisser) sur un graphique : idx(xSvg) → index de l'élément, choose(i) applique.
+function scrub(svg, W, idx, choose){
+  let down = false;
+  const at = e => { const r = svg.getBoundingClientRect(); return idx((e.clientX - r.left) * W / r.width); };
+  svg.addEventListener("pointerdown", e => { down = true; choose(at(e)); });
+  svg.addEventListener("pointermove", e => { if (down) choose(at(e)); });
+  for (const t of ["pointerup", "pointercancel", "pointerleave"]) svg.addEventListener(t, () => { down = false; });
+}
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 // Clé d'accès et adresse du script : reçues une seule fois par le lien de liaison (#k=…&api=…), puis gardées sur le téléphone.
@@ -489,7 +550,6 @@ function renderNow(){
   $("ring").classList.add("on");
   const age = Math.round((Date.now() - N.t) / 60000), t = new Date(N.t), same = t.toDateString() === new Date().toDateString();
   let foot = `Relevé de ${hm(N.t)}${same ? "" : " le " + t.toLocaleDateString("fr-FR")}${N.tempo ? " · jour " + N.tempo : ""}`;
-  if (N.since) foot += `<br>${N.since.midnight ? "Depuis minuit" : "Depuis le " + shortDay(N.since.from)} : ${fK(N.since.buy)} achetés, ${fK(N.since.sol)} produits`;
   if (age > 90) foot += `<br><span class="warn">Home Assistant n'a pas écrit depuis : les chiffres peuvent être en retard.</span>`;
   $("nowFoot").innerHTML = foot;
   setStatusAge();
@@ -497,7 +557,7 @@ function renderNow(){
 function niceMax(m){ if (!(m > 0)) return 1; const p = 10 ** Math.floor(Math.log10(m)); const f = m / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * p; }
 function renderCurve(){
   const pts = (D.curve || []).map(([m, g, s]) => ({t: m * 60000, g, s, c: g + s})).filter(p => p.t >= Date.now() - 26 * 3600e3);
-  if (pts.length < 2){ $("cToday").innerHTML = '<p class="empty">Il faut au moins deux relevés récents pour tracer la courbe.</p>'; return; }
+  if (pts.length < 2){ $("cToday").innerHTML = '<p class="empty">Il faut au moins deux relevés récents pour tracer la courbe.</p>'; $("cTodayPick").innerHTML = ""; return; }
   const W = 440, Hh = 170, pl = 38, pr = 4, pt = 10, pb = 22;
   const t0 = pts[0].t, t1 = pts[pts.length-1].t, span = Math.max(1, t1 - t0);
   const max = niceMax(Math.max(...pts.map(p => p.c), 100));
@@ -513,7 +573,42 @@ function renderCurve(){
     ${grid}<path d="${area("c")}" fill="url(#gC)"/><path d="${area("s")}" fill="url(#gS)"/>
     <path d="${line("c")}" fill="none" stroke="#4D8DFF" stroke-width="2.2" stroke-linejoin="round"/>
     <path d="${line("s")}" fill="none" stroke="#F5B83D" stroke-width="2.2" stroke-linejoin="round"/>
-    <circle cx="${x(t1)}" cy="${y(pts[pts.length-1].c)}" r="4.5" fill="#5FD3A0"/>${lab}</svg>`;
+    <circle cx="${x(t1)}" cy="${y(pts[pts.length-1].c)}" r="4.5" fill="#5FD3A0"/>${lab}
+    <g class="hl" pointer-events="none"><line y1="${pt}" y2="${Hh-pb}" stroke="#A9C8FF" stroke-opacity=".7" stroke-dasharray="3 3"/><circle r="4" fill="#4D8DFF" stroke="#0B1526" stroke-width="1.5" class="hc"/><circle r="4" fill="#F5B83D" stroke="#0B1526" stroke-width="1.5" class="hs"/></g></svg>`;
+  const svg = $("cToday").querySelector("svg"), g = svg.querySelector(".hl");
+  let sel = -1;
+  const choose = i => {
+    i = Math.max(0, Math.min(pts.length - 1, i)); if (i === sel) return; sel = i;
+    const p = pts[i], X = x(p.t).toFixed(1);
+    g.querySelector("line").setAttribute("x1", X); g.querySelector("line").setAttribute("x2", X);
+    g.querySelector(".hc").setAttribute("cx", X); g.querySelector(".hc").setAttribute("cy", y(p.c).toFixed(1));
+    g.querySelector(".hs").setAttribute("cx", X); g.querySelector(".hs").setAttribute("cy", y(p.s).toFixed(1));
+    const d = new Date(p.t), same = d.toDateString() === new Date().toDateString();
+    pickTable($("cTodayPick"), [["Heure", `${hm(p.t)}<small>${same ? "aujourd'hui" : "hier"}</small>`], ["Conso maison", fW(p.c)], ["Solaire", fW(p.s)], ["Réseau", fW(p.g)]]);
+  };
+  // point le plus proche du doigt (relevés toutes les 15 min, parfois irréguliers)
+  scrub(svg, W, xs => { const t = t0 + (xs - pl) * span / (W - pl - pr); let b = 0; pts.forEach((p, i) => { if (Math.abs(p.t - t) < Math.abs(pts[b].t - t)) b = i; }); return b; }, choose);
+  choose(pts.length - 1);
+}
+function renderToday(){
+  const s = D.now && D.now.since;
+  if (!s){
+    $("ajTitle").textContent = "Aujourd'hui"; tempoChip($("ajTempo"), null);
+    for (const id of ["ajCons", "ajCost", "ajBuy", "ajSol"]) $(id).textContent = "—";
+    $("ajConsN").textContent = "Pas encore de relevé."; for (const id of ["ajCostN", "ajBuyN", "ajSolN"]) $(id).textContent = " ";
+    return;
+  }
+  $("ajTitle").textContent = s.midnight ? `Aujourd'hui, ${dayName(s.from)}` : `Depuis le ${dayName(s.from)}`;
+  tempoChip($("ajTempo"), s.color);
+  const cons = s.buy + (s.sol || 0);
+  $("ajCons").textContent = fK(cons);
+  $("ajConsN").textContent = s.sol != null && cons > 0 ? `dont ${fr(s.sol / cons * 100, 0)} % de solaire` : " ";
+  $("ajCost").textContent = fE(s.eur);
+  $("ajCostN").textContent = `prix Tempo · à ${hm(D.now.t)}`;
+  $("ajBuy").textContent = fK(s.buy, 2);
+  $("ajBuyN").textContent = s.hc != null ? `HC ${fr(s.hc, 2)} · HP ${fr(s.hp, 2)}` : " ";
+  $("ajSol").textContent = fK(s.sol, 2);
+  $("ajSolN").textContent = s.gain != null ? `${fE(s.gain)} économisés` : " ";
 }
 function tempoChip(el, c){ if (!c){ el.hidden = true; return; } el.hidden = false; el.textContent = "Jour " + c; el.style.setProperty("--c", TCOL[c] || "var(--t-bleu)"); }
 function renderYest(){
@@ -598,7 +693,7 @@ function render(d){
   D = d;
   if (d.role && d.role !== role){ role = d.role; ls.set("role", role); }
   applyRole();
-  const parts = [renderNow, renderCurve, renderYest, renderMonth, renderCmp, renderPel, renderAbout].concat(role === "owner" ? [renderTarifs, renderLog] : []);
+  const parts = [renderNow, renderCurve, renderYest, renderToday, renderMonth, renderCmp, renderPel, renderAbout].concat(role === "owner" ? [renderTarifs, renderLog] : []);
   for (const f of parts){ try{ f(); }catch(e){ console.error(e); } }
   if (d.errs && d.errs.length) note("Une partie des chiffres manque : " + d.errs.join(" ; "), true);
 }
@@ -611,30 +706,48 @@ function barChart(el, items, series, opts){
   const n = items.length, slot = (W - pl - pr) / n, bw = Math.max(2, slot * 0.7);
   const y = v => pt + (max - v) * (Hh - pt - pb) / max;
   const grid = [0, max/2, max].map(v => `<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" stroke="#26395C"/><text class="${opts.money ? "money" : ""}" x="${pl-6}" y="${y(v)+4}" font-size="10" text-anchor="end" fill="#93A6C6" font-family="Manrope, sans-serif">${fr(v, v < 10 && v % 1 ? 1 : 0)}${opts.unit || ""}</text>`).join("");
-  let bars = "";
+  let bars = `<rect class="hl" x="${pl}" y="${pt - 4}" width="${slot.toFixed(1)}" height="${Hh - pt - pb + 8}" rx="4" fill="#A9C8FF" fill-opacity=".14" pointer-events="none"/>`;
   items.forEach((it, i) => {
     const x0 = pl + i * slot + (slot - bw) / 2;
     if (opts.stack){ let acc = 0; series.forEach(se => { const v = it.v[se.key] || 0; if (v <= 0) return; bars += `<rect x="${x0.toFixed(1)}" y="${y(acc + v).toFixed(1)}" width="${bw.toFixed(1)}" height="${(y(acc) - y(acc + v)).toFixed(1)}" fill="${se.color}" rx="1.5"/>`; acc += v; }); }
     else { const w = bw / series.length; series.forEach((se, j) => { const v = it.v[se.key]; if (v == null) return; bars += `<rect x="${(x0 + j*w).toFixed(1)}" y="${y(v).toFixed(1)}" width="${(w - 1).toFixed(1)}" height="${(y(0) - y(v)).toFixed(1)}" fill="${se.color}" rx="1.5"/>`; }); }
     if (it.mark) bars += `<circle cx="${(x0 + bw/2).toFixed(1)}" cy="${Hh - pb + 6}" r="2.6" fill="${it.mark}"/>`;
-    bars += `<rect x="${(pl + i*slot).toFixed(1)}" y="${pt}" width="${slot.toFixed(1)}" height="${Hh-pt-pb+10}" fill="transparent" data-i="${i}" style="cursor:pointer"/>`;
   });
   const every = opts.every || 1;
   const labels = items.map((it, i) => ((i % every === 0 && n - 1 - i >= every / 2) || i === n - 1) ? `<text x="${(pl + i*slot + slot/2).toFixed(1)}" y="${Hh - 4}" font-size="10" text-anchor="middle" fill="#93A6C6" font-family="Manrope, sans-serif">${esc(it.label)}</text>` : "").join("");
-  el.innerHTML = `<svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="${esc(opts.aria || "")}" data-noswipe>${grid}${bars}${labels}</svg>`;
-  el.querySelector("svg").addEventListener("click", e => { const r = e.target.closest("[data-i]"); if (r) opts.onPick(items[+r.dataset.i]); });
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="${esc(opts.aria || "")}" data-noswipe style="cursor:pointer">${grid}${bars}${labels}</svg>`;
+  const svg = el.querySelector("svg"), hl = svg.querySelector(".hl");
+  // Sélection : celle d'avant si l'élément existe encore (même clé), sinon la dernière valeur connue.
+  let sel = items.findIndex(it => it.key != null && it.key === el.dataset.key);
+  if (sel < 0){ sel = n - 1; if (opts.has) while (sel > 0 && !opts.has(items[sel])) sel--; }
+  let cur = -1;
+  const choose = i => {
+    i = Math.max(0, Math.min(n - 1, i)); if (i === cur) return; cur = i;
+    hl.setAttribute("x", (pl + i * slot).toFixed(1));
+    if (items[i].key != null) el.dataset.key = items[i].key;
+    opts.onPick(items[i], i);
+  };
+  scrub(svg, W, xs => Math.floor((xs - pl) / slot), choose);
+  choose(sel);
 }
 const TDOT = {Bleu:"#4D8DFF", Blanc:"#E6EEFB", Rouge:"#FF6B6B"};
 function renderDays(){
-  const items = H.days.map(d => ({label: shortDay(d.k), v: {b: d.kwh || 0, s: d.sol || 0}, mark: d.c ? TDOT[d.c] : null, d}));
-  barChart($("cDays"), items, [{key:"b", color:"#4D8DFF"}, {key:"s", color:"#F5B83D"}], {stack: true, every: 7, aria: "kWh achetés et produits par jour sur 30 jours",
-    onPick: it => { const d = it.d; $("cDaysCap").innerHTML = d.kwh != null ? `${dayName(d.k)}${d.c ? " · jour " + d.c : ""} : ${fK(d.kwh)} achetés, ${fK(d.sol)} solaire, <span class="money">${fE(d.eur)}</span>${d.tesla ? ` · Tesla ${fr(d.tesla, 0)} kWh` : ""}` : `${dayName(d.k)} : pas de données.`; }});
+  const items = H.days.map(d => ({key: d.k, label: shortDay(d.k), v: {b: d.kwh || 0, s: d.sol || 0}, mark: d.c ? TDOT[d.c] : null, d}));
+  const withTesla = H.days.some(d => d.tesla > 0);
+  barChart($("cDays"), items, [{key:"b", color:"#4D8DFF"}, {key:"s", color:"#F5B83D"}], {stack: true, every: 7, aria: "kWh achetés et produits par jour sur 30 jours", has: it => it.d.kwh != null,
+    onPick: it => { const d = it.d;
+      pickTable($("cDaysPick"), [["Jour", dayShort(d.k)], ["Acheté kWh", n1(d.kwh)], ["Solaire kWh", n1(d.sol)], ["Coût", ok_(d.eur) ? fE(d.eur) : NA, true], ["Tempo", tdot(d.c)]]
+        .concat(withTesla ? [["Tesla kWh", d.tesla ? fr(d.tesla, 0) : NA]] : []));
+    }});
 }
 let monthUnit = ls.get("monthUnit") || "eur";
 function renderMonths(){
-  const items = H.months.map(m => ({label: MOIS_C[m.m-1], v: {c: m.cur.n ? m.cur[monthUnit] : null, p: m.prev.n ? m.prev[monthUnit] : null}, m}));
-  barChart($("cMonths"), items, [{key:"c", color:"#4D8DFF"}, {key:"p", color:"#5A6E92"}], {stack: false, unit: monthUnit === "eur" ? " €" : "", money: monthUnit === "eur", aria: "Achats d'électricité par mois comparés à l'année précédente",
-    onPick: it => { const m = it.m; $("cMonthsCap").innerHTML = `${MOIS[m.m-1]} ${m.y}${m.partial ? " (en cours)" : ""} : ${m.cur.n ? `${fK(m.cur.kwh, 0)} · <span class="money">${fE0(m.cur.eur)}</span>` : "pas de données"} — un an plus tôt : ${m.prev.n ? `${fK(m.prev.kwh, 0)} · <span class="money">${fE0(m.prev.eur)}</span>` : "pas de données"}`; }});
+  const items = H.months.map(m => ({key: m.y + "-" + m.m, label: MOIS_C[m.m-1], v: {c: m.cur.n ? m.cur[monthUnit] : null, p: m.prev.n ? m.prev[monthUnit] : null}, m}));
+  barChart($("cMonths"), items, [{key:"c", color:"#4D8DFF"}, {key:"p", color:"#5A6E92"}], {stack: false, unit: monthUnit === "eur" ? " €" : "", money: monthUnit === "eur", aria: "Achats d'électricité par mois comparés à l'année précédente", has: it => it.m.cur.n > 0,
+    onPick: it => { const m = it.m, c = m.cur.n, p = m.prev.n;
+      pickTable($("cMonthsPick"), [["Mois", `${MOIS_C[m.m-1]} ${String(m.y).slice(2)}<small>${m.partial ? "en cours" : " "}</small>`],
+        ["kWh", c ? fr(m.cur.kwh, 0) : NA], ["Coût", c ? fE0(m.cur.eur) : NA, true], ["N−1 kWh", p ? fr(m.prev.kwh, 0) : NA], ["N−1 coût", p ? fE0(m.prev.eur) : NA, true]]);
+    }});
 }
 document.querySelectorAll("#segM button").forEach(b => {
   b.setAttribute("aria-pressed", b.dataset.v === monthUnit ? "true" : "false");
@@ -656,10 +769,64 @@ function renderDevices(){
   const v = $("devMonth").value, ha = v === "ha";
   const src = ha ? H.dev.ha : (H.dev.suivi || [])[+v];
   if (!src){ $("devRows").innerHTML = '<p class="empty">Rien pour ce mois.</p>'; $("devNote").textContent = ""; return; }
-  $("devRows").innerHTML = src.list.map(l => `<div class="line${l.tot ? " tot" : ""}"><span class="nm">${esc(l.name)}${l.sub ? `<small>${esc(l.sub)}</small>` : ""}${l.share != null && !l.tot ? `<div class="share"><i style="width:${(Math.min(1, l.share)*100).toFixed(1)}%"></i></div>` : ""}</span><span class="a">${l.kwh != null ? fK(l.kwh) : ""}${l.share != null && !l.tot ? `<br><span class="sub">${fr(l.share*100, 0)} %</span>` : ""}</span><span class="b money">${fE(l.eur)}</span></div>`).join("") || '<p class="empty">Rien pour ce mois.</p>';
-  $("devNote").textContent = ha ? `Du 1er au ${src.to} : index des prises Home Assistant (onglet Jours). Coûts ≈ kWh × prix moyen du mois (${fr(src.avg, 4)} €/kWh).` : "Onglet « Suivi mensuel » du fichier Electricité, rempli le 1er de chaque mois.";
+  $("devRows").innerHTML = src.list.map(l => `<div class="line${l.tot ? " tot" : ""}${l.key ? " tap" : ""}"${l.key ? ` role="button" tabindex="0" data-dev="${esc(l.key)}" data-name="${esc(l.name)}" aria-label="${esc(l.name)} : voir la courbe"` : ""}><span class="nm">${esc(l.name)}${l.key ? '<span class="go" aria-hidden="true">›</span>' : ""}${l.sub ? `<small>${esc(l.sub)}</small>` : ""}${l.share != null && !l.tot ? `<div class="share"><i style="width:${(Math.min(1, l.share)*100).toFixed(1)}%"></i></div>` : ""}</span><span class="a">${l.kwh != null ? fK(l.kwh) : ""}${l.share != null && !l.tot ? `<br><span class="sub">${fr(l.share*100, 0)} %</span>` : ""}</span><span class="b money">${fE(l.eur)}</span></div>`).join("") || '<p class="empty">Rien pour ce mois.</p>';
+  $("devNote").textContent = (ha ? `Du 1er au ${src.to} : index des prises Home Assistant (onglet Jours). Coûts ≈ kWh × prix moyen du mois (${fr(src.avg, 4)} €/kWh).` : "Onglet « Suivi mensuel » du fichier Electricité, rempli le 1er de chaque mois.")
+    + (src.list.some(l => l.key) ? " Touche un appareil (›) pour voir sa courbe." : "");
 }
 $("devMonth").addEventListener("change", renderDevices);
+$("devRows").addEventListener("click", e => { const r = e.target.closest("[data-dev]"); if (r) openDev(r.dataset.dev, r.dataset.name); });
+$("devRows").addEventListener("keydown", e => { if (e.key !== "Enter" && e.key !== " ") return; const r = e.target.closest("[data-dev]"); if (r){ e.preventDefault(); openDev(r.dataset.dev, r.dataset.name); } });
+
+// ---------- Fiche appareil : kWh par jour (onglet Jours) ou par mois (Suivi mensuel) ----------
+let DV = null, devKey = null, devMode = ls.get("devMode") === "month" ? "month" : "day", devLoading = null;
+function devSeg(){ document.querySelectorAll("#segD button").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === devMode ? "true" : "false")); }
+document.querySelectorAll("#segD button").forEach(b => b.onclick = () => { devMode = b.dataset.v; ls.set("devMode", devMode); devSeg(); $("dsChart").dataset.key = ""; renderDev(); });
+async function loadDev(force){
+  if (devLoading) return devLoading;
+  devLoading = api("dev", force ? 1 : null).then(d => { DV = d; return d; }).finally(() => { devLoading = null; });
+  return devLoading;
+}
+async function openDev(key, name){
+  devKey = key; devSeg();
+  $("dsTitle").textContent = name || "Appareil";
+  $("dsChart").dataset.key = "";
+  $("devSheet").hidden = false; document.body.style.overflow = "hidden";
+  if (!(history.state && history.state.sheet)) history.pushState({sheet: 1}, "");
+  if (DV){ renderDev(); return; }
+  $("dsChart").innerHTML = '<p class="empty">Chargement…</p>'; $("dsPick").innerHTML = ""; $("dsNote").textContent = "";
+  try{ await loadDev(false); if (!$("devSheet").hidden) renderDev(); }
+  catch(e){ $("dsChart").innerHTML = `<p class="empty">${esc(e.message)}</p>`; }
+}
+function hideDev(){ $("devSheet").hidden = true; document.body.style.overflow = ""; }
+function closeDev(){ if (history.state && history.state.sheet) history.back(); else hideDev(); }
+window.addEventListener("popstate", () => { if (!$("devSheet").hidden) hideDev(); });
+$("dsClose").onclick = closeDev;
+$("devSheet").addEventListener("click", e => { if (e.target === $("devSheet")) closeDev(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("devSheet").hidden) closeDev(); });
+function renderDev(){
+  const s = DV && DV.s && DV.s[devKey], el = $("dsChart"), sol = devKey === "Solaire_kWh";
+  const color = sol ? "#F5B83D" : devKey === "tesla" ? "#5FD3A0" : "#4D8DFF";
+  if (!s){ el.innerHTML = '<p class="empty">Pas de données pour cet appareil.</p>'; $("dsPick").innerHTML = ""; $("dsNote").textContent = ""; return; }
+  if (devMode === "day"){
+    const i0 = s.k.findIndex(v => v != null);
+    if (i0 < 0){ el.innerHTML = '<p class="empty">Pas encore de mesure jour par jour pour cet appareil.</p>'; $("dsPick").innerHTML = ""; $("dsNote").textContent = ""; return; }
+    const items = DV.days.slice(i0).map((k, j) => { const i = i0 + j; return {key: k, label: shortDay(k), v: {a: s.k[i] || 0}, mark: DV.c[i] ? TDOT[DV.c[i]] : null, d: {k, kwh: s.k[i], eur: s.e[i], c: DV.c[i]}}; });
+    barChart(el, items, [{key: "a", color}], {stack: true, every: items.length > 40 ? 14 : 7, unit: "", aria: "kWh par jour", has: it => it.d.kwh != null,
+      onPick: it => { const d = it.d; pickTable($("dsPick"), [["Jour", dayShort(d.k)], ["kWh", n1(d.kwh, 2)], [sol ? "Valeur" : "Coût ≈", ok_(d.eur) ? fE(d.eur) : NA, true], ["Tempo", tdot(d.c)]]); }});
+    const vals = items.map(it => it.d.kwh).filter(v => v != null), tot = vals.reduce((a, b) => a + b, 0);
+    $("dsNote").innerHTML = `${vals.length} jour${vals.length > 1 ? "s" : ""} mesuré${vals.length > 1 ? "s" : ""} : <b>${fK(tot)}</b> au total, <b>${fK(vals.length ? tot / vals.length : null, 2)}</b> par jour en moyenne. `
+      + (sol ? "Valeur = production × prix heure pleine du jour." : devKey === "tesla" ? "Recharges notées dans le fichier Electricité ; coût ≈ kWh × prix moyen payé ce jour-là." : "Index de la prise dans l'onglet Jours ; coût ≈ kWh × prix moyen payé ce jour-là.");
+  } else {
+    const ms = DV.months || [], i0 = ms.findIndex(m => m.v[devKey]);
+    if (i0 < 0){ el.innerHTML = '<p class="empty">Pas encore de mois mesuré pour cet appareil.</p>'; $("dsPick").innerHTML = ""; $("dsNote").textContent = ""; return; }
+    const items = ms.slice(i0).map(m => { const v = m.v[devKey], mo = +m.id.slice(5, 7); return {key: m.id, label: MOIS_C[mo - 1], v: {a: v ? v[0] || 0 : 0}, d: {m, mo, kwh: v ? v[0] : null, eur: v ? v[1] : null}}; });
+    barChart(el, items, [{key: "a", color}], {stack: true, unit: "", aria: "kWh par mois", has: it => it.d.kwh != null,
+      onPick: it => { const d = it.d, m = d.m;
+        pickTable($("dsPick"), [["Mois", `${MOIS_C[d.mo - 1]} ${m.id.slice(2, 4)}<small>${m.partial ? `1er–${m.to}, en cours` : m.est ? "Home Assistant" : "Suivi mensuel"}</small>`],
+          ["kWh", n1(d.kwh, d.kwh != null && d.kwh < 10 ? 2 : 1)], [sol ? "Valeur" : m.est ? "Coût ≈" : "Coût", ok_(d.eur) ? fE(d.eur) : NA, true]]); }});
+    $("dsNote").textContent = "Mois terminés : onglet « Suivi mensuel » (fichier Electricité). Mois sans ligne dans le Suivi : somme des jours de l'onglet Jours, coût estimé.";
+  }
+}
 function renderHist(h){
   H = h;
   for (const f of [renderDays, renderMonths, renderSeasons, renderDevSelect, renderDevices]){ try{ f(); }catch(e){ console.error(e); } }
@@ -678,7 +845,7 @@ async function loadHist(force){
   try{ const h = await api("hist", force ? 1 : null); renderHist(h); ls.set("lastHist", JSON.stringify(h)); }
   catch(e){ if (tab === "hist") note(e.message, true); }
 }
-$("refresh").onclick = () => { load(true, $("refresh")); if (tab === "hist" || H) loadHist(true); };
+$("refresh").onclick = () => { load(true, $("refresh")); if (tab === "hist" || H) loadHist(true); DV = null; if (!$("devSheet").hidden) loadDev(true).then(renderDev).catch(e => note(e.message, true)); };
 
 // ---------- Onglets ----------
 let tab = "accueil";
@@ -696,7 +863,7 @@ document.querySelectorAll("#tabs button").forEach(b => b.onclick = () => showTab
 (() => {
   let sx = 0, sy = 0, st = 0, ok = false;
   const blocked = el => { for (let e = el; e && e !== document.body; e = e.parentElement){
-    if (e.matches && e.matches("svg, input, textarea, select, .tbl, .lock, [data-noswipe]")) return true;
+    if (e.matches && e.matches("svg, input, textarea, select, .tbl, .lock, .sheet, [data-noswipe]")) return true;
     const ox = getComputedStyle(e).overflowX; if ((ox === "auto" || ox === "scroll") && e.scrollWidth > e.clientWidth + 2) return true; } return false; };
   document.addEventListener("touchstart", e => { ok = e.touches.length === 1 && $("lock").hidden && !blocked(e.target); if (!ok) return; sx = e.touches[0].clientX; sy = e.touches[0].clientY; st = Date.now(); }, {passive: true});
   document.addEventListener("touchend", e => {
