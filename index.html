@@ -514,11 +514,18 @@ const POSTS = {tesla:1, sac:1, tarif:1, sub:1};
 async function api(action, p){
   const key = KEY(), url = API();
   if (!key || !url) throw new Error(NOT_LINKED);
-  let r;
-  if (POSTS[action]) r = await fetch(url, {method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body: JSON.stringify({k:key, a:action, p})});
-  else { const q = new URLSearchParams({k:key, a:action}); if (p != null) q.set("p", JSON.stringify(p)); r = await fetch(url + "?" + q.toString(), {cache:"no-store"}); }
-  if (!r.ok) throw new Error("Le script ne répond pas (code " + r.status + "). Réessaie dans un instant.");
-  const j = await r.json();
+  const call = async () => {
+    let r;
+    if (POSTS[action]) r = await fetch(url, {method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body: JSON.stringify({k:key, a:action, p})});
+    else { const q = new URLSearchParams({k:key, a:action}); if (p != null) q.set("p", JSON.stringify(p)); r = await fetch(url + "?" + q.toString(), {cache:"no-store"}); }
+    if (!r.ok) throw new Error("Le script ne répond pas (code " + r.status + "). Réessaie dans un instant.");
+    const txt = await r.text();
+    try{ return JSON.parse(txt); }catch(_){ return null; } // page d'erreur HTML de Google au lieu du JSON
+  };
+  let j = await call();
+  // Une page d'erreur (script trop long, démarrage à froid…) : on réessaie une fois, sauf pour les écritures.
+  if (!j && !POSTS[action]){ await new Promise(res => setTimeout(res, 1500)); j = await call(); }
+  if (!j) throw new Error("Le script Google a renvoyé une page d'erreur au lieu des chiffres (souvent un calcul trop long). Réessaie dans une minute ; si ça continue, Actualiser.");
   if (!j.ok) throw new Error(j.error === "clé refusée" ? "Accès refusé. Rouvre le lien de liaison." : j.error);
   return j.data;
 }
