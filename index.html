@@ -1,0 +1,942 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="theme-color" content="#0B1526">
+<meta name="color-scheme" content="dark">
+<meta name="robots" content="noindex, nofollow">
+<title>Conso de poche</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Unbounded:wght@500;600&display=swap">
+<style>
+/* Conso de poche — même charpente que Crypto de poche, en bleu. L'accueil répond d'abord : « est-ce que je produis plus que je consomme ? » */
+:root{
+  --night:#0B1526; --navy:#13213A; --navy-2:#1A2C4C; --line:#26395C;
+  --ice:#E6EEFB; --mist:#93A6C6; --blue:#4D8DFF; --blue-soft:#A9C8FF;
+  --mint:#5FD3A0; --coral:#FF7A85; --sun:#F5B83D; --sun-soft:#FFD98A;
+  --t-bleu:#4D8DFF; --t-blanc:#E6EEFB; --t-rouge:#FF6B6B;
+  --ease-out:cubic-bezier(0.23,1,0.32,1);
+  --sans:"Manrope","Segoe UI",system-ui,sans-serif;
+  --display:"Unbounded","Manrope",system-ui,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{overflow-x:hidden;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;overscroll-behavior:none;background:var(--night)}
+body{overflow-x:hidden;margin:0;min-height:100dvh;background:radial-gradient(120% 60% at 50% -10%,#16305C 0%,rgba(11,21,38,0) 60%) no-repeat,var(--night);color:var(--ice);font-family:var(--sans);font-size:15px;line-height:1.45;font-variant-numeric:tabular-nums}
+button{font:inherit;color:inherit;touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+[hidden]{display:none!important}
+
+.app{max-width:480px;margin:0 auto;
+  padding:calc(14px + env(safe-area-inset-top,0px)) max(18px,env(safe-area-inset-right,0px)) calc(104px + env(safe-area-inset-bottom,0px)) max(18px,env(safe-area-inset-left,0px));
+  display:flex;flex-direction:column;gap:24px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand{font-family:var(--display);font-weight:500;font-size:.95rem;letter-spacing:.01em}
+.status{display:flex;align-items:center;gap:7px;color:var(--mist);font-size:.8rem;min-width:0}
+.status span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.status i{width:7px;height:7px;border-radius:50%;background:var(--mist);flex:none}
+.status.live i{background:var(--mint)} .status.late i{background:var(--sun)} .status.old i{background:var(--coral)}
+.sub{color:var(--mist);font-size:.8rem}
+.up{color:var(--mint)} .down{color:var(--coral)} .warn{color:var(--sun)}
+
+/* Onglets */
+.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:4;display:grid;grid-template-columns:repeat(var(--n,4),minmax(0,1fr));gap:4px;padding:4px;margin:-8px 0 -6px;border-radius:16px;background:rgba(19,33,58,.88);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line)}
+.tabs button{min-width:0;border:0;border-radius:12px;padding:10px 0;background:transparent;color:var(--mist);font-weight:600;font-size:.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background 180ms ease,color 180ms ease}
+.tabs button[aria-selected="true"]{background:linear-gradient(135deg,#2F6FE8,#6FA3FF);color:#06101F}
+.view{display:flex;flex-direction:column;gap:24px}
+.view.fade{animation:viewIn 260ms var(--ease-out)}
+.view.fade.fromR{animation:viewInR 240ms var(--ease-out)} .view.fade.fromL{animation:viewInL 240ms var(--ease-out)}
+@keyframes viewIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes viewInR{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:none}}
+@keyframes viewInL{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:none}}
+
+/* En ce moment */
+.pot{display:grid;justify-items:center;gap:14px;padding-top:4px}
+.q{color:var(--mist);font-size:.88rem;text-align:center}
+.ring{position:relative;width:min(70vw,260px);aspect-ratio:1;max-width:100%;isolation:isolate}
+.ring::before{content:"";position:absolute;inset:-26%;z-index:-1;border-radius:50%;
+  background:radial-gradient(closest-side,rgba(77,141,255,.36),rgba(77,141,255,.1) 55%,transparent 75%),radial-gradient(closest-side at 70% 25%,rgba(245,184,61,.2),transparent 70%);
+  filter:blur(8px);opacity:0;transform:scale(.92);transition:opacity 900ms var(--ease-out),transform 900ms var(--ease-out)}
+.ring.on::before{opacity:1;transform:scale(1)}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg);filter:drop-shadow(0 0 10px rgba(77,141,255,.4))}
+.ring .arc{fill:none;stroke-linecap:round;transition:stroke-dashoffset 900ms var(--ease-out)}
+.ring .center{position:absolute;inset:0;display:grid;place-content:center;justify-items:center;gap:6px;text-align:center}
+.answer{font-family:var(--display);font-weight:600;font-size:clamp(2.2rem,11vw,3rem);letter-spacing:-.02em;line-height:1;background:linear-gradient(180deg,#FFFFFF,#BFD5FF);-webkit-background-clip:text;background-clip:text;color:transparent}
+.answer.yes{background:linear-gradient(180deg,#FFF6DD,#F5B83D);-webkit-background-clip:text;background-clip:text}
+.nowtext{text-align:center;font-size:.95rem;max-width:30em}
+.figs{width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.fig{background:var(--navy);border-radius:14px;padding:10px;display:grid;gap:2px;text-align:center;min-width:0}
+.fig b{font-weight:700;font-size:1.02rem;white-space:nowrap}
+.fig span{color:var(--mist);font-size:.72rem}
+.fig.s b{color:var(--sun-soft)}
+.day{color:var(--mist);font-size:.82rem;text-align:center;line-height:1.5}
+
+/* Blocs */
+.block{display:flex;flex-direction:column}
+.block h2,.curve h2{font-size:.95rem;font-weight:600;margin:0 0 10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.curve svg{display:block;width:100%;height:auto;overflow:visible}
+.curvehead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
+.curvehead h2{margin:0}
+.seg{display:flex;background:var(--navy);border-radius:12px;padding:3px}
+.seg button{border:0;background:transparent;border-radius:9px;padding:6px 10px;font-size:.78rem;font-weight:600;color:var(--mist)}
+.seg button[aria-pressed="true"]{background:var(--navy-2);color:var(--ice)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.76rem;color:var(--mist);margin-top:8px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend span::before{content:"";width:10px;height:10px;border-radius:3px;background:var(--c)}
+.cap{font-size:.8rem;color:var(--mist);min-height:1.3em;margin-top:6px;line-height:1.45}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{background:var(--navy);border-radius:14px;padding:12px 14px;display:grid;gap:3px;min-width:0}
+.tile .l{font-size:.72rem;color:var(--mist);font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+.tile .v{font-weight:700;font-size:1.2rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .n{font-size:.76rem;color:var(--mist)}
+.tempo{display:inline-flex;align-items:center;gap:6px;font-size:.72rem;font-weight:700;border-radius:999px;padding:3px 9px;background:var(--navy-2);color:var(--ice)}
+.tempo::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--c,var(--t-bleu))}
+.line{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:2px 12px;align-items:baseline;padding:10px 0;border-top:1px solid var(--line);font-size:.92rem}
+.line:first-child{border-top:0}
+.line .nm{min-width:0}
+.line .nm small{display:block;color:var(--mist);font-size:.76rem;margin-top:1px}
+.line .a,.line .b{text-align:right;white-space:nowrap}
+.line .b{font-weight:600}
+.line.tot{font-weight:700}
+.line.tot .b{color:var(--blue-soft)}
+.share{height:5px;border-radius:3px;background:var(--navy-2);overflow:hidden;margin-top:6px}
+.share i{display:block;height:100%;background:var(--blue)}
+.meter{position:relative;height:10px;border-radius:5px;background:var(--navy-2);margin:10px 0 2px}
+.meter i{position:absolute;left:0;top:0;bottom:0;border-radius:5px;background:linear-gradient(90deg,#2F6FE8,#6FA3FF);transition:width 700ms var(--ease-out)}
+.meter i.over{background:linear-gradient(90deg,#E55B66,#FF7A85)}
+.meter b{position:absolute;top:-4px;bottom:-4px;width:2px;border-radius:1px;background:var(--ice)}
+.foot{color:var(--mist);font-size:.8rem;line-height:1.5;margin:8px 0 0}
+.foot b{color:var(--ice);font-weight:600}
+.tbl{overflow-x:auto}
+.tbl table{border-collapse:collapse;width:100%;font-size:.85rem}
+.tbl th,.tbl td{padding:7px 6px;border-top:1px solid var(--line);text-align:right;white-space:nowrap}
+.tbl th:first-child,.tbl td:first-child{text-align:left}
+.tbl thead th{border-top:0;color:var(--mist);font-weight:600;font-size:.72rem;text-transform:uppercase;letter-spacing:.05em}
+.tbl tr.cur td{font-weight:700}
+.empty{color:var(--mist);font-size:.88rem;margin:0}
+
+/* Formulaires */
+form{display:grid;gap:10px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:auto 1fr 1fr;gap:8px;align-items:center}
+.grid3 .h{font-size:.72rem;color:var(--mist);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+label.f{display:grid;gap:4px;color:var(--mist);font-size:.76rem;min-width:0}
+input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice);background:var(--night);border:1px solid var(--line);border-radius:12px;padding:10px;color-scheme:dark}
+.pill{border:0;border-radius:999px;padding:10px 16px;background:var(--navy-2);font-size:.88rem;font-weight:700;color:var(--ice);transition:transform 140ms var(--ease-out)}
+.pill.main{background:var(--blue);color:#06101F}
+.pill:active{transform:scale(.97)} .pill:disabled{opacity:.5}
+.msg{font-size:.86rem;border-radius:12px;padding:10px 12px;background:var(--navy)}
+.msg.err{color:var(--coral)} .msg.ok{color:var(--mint)}
+.confirm{display:grid;gap:10px;border:1px solid var(--sun);border-radius:12px;padding:12px;font-size:.9rem}
+.acts{display:flex;gap:8px;flex-wrap:wrap}
+.hint{color:var(--mist);font-size:.76rem;line-height:1.45;margin:0}
+.opt{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:center;padding:12px 0;border-top:1px solid var(--line)}
+.opt:first-child{border-top:0}
+.opt small{display:block;color:var(--mist);font-size:.76rem}
+.switch{width:46px;height:28px;border:0;border-radius:999px;background:var(--navy-2);position:relative;padding:0}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--mist);transition:transform 160ms var(--ease-out),background 160ms ease}
+.switch[aria-checked="true"]{background:var(--blue)}
+.switch[aria-checked="true"]::after{transform:translateX(18px);background:#06101F}
+
+.note{background:var(--navy);border-radius:14px;padding:12px 14px;font-size:.88rem;color:var(--ice)}
+.note.err{color:var(--coral)}
+
+/* Barre d'actions */
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:5;background:rgba(11,21,38,.9);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line);
+  padding:10px max(18px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(18px,env(safe-area-inset-left,0px))}
+.bar .in{max-width:480px;margin:0 auto;display:grid;grid-template-columns:52px minmax(0,1fr);gap:10px}
+.btn{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:0;border-radius:16px;padding:14px 10px;background:var(--navy);font-weight:600;font-size:.92rem;transition:transform 140ms var(--ease-out),background 140ms ease}
+.btn:active{transform:scale(.97)}
+.btn.main{background:var(--blue);color:#06101F}
+.btn:disabled{opacity:.55}
+.btn .lbl{display:inline-block;transition:filter 200ms ease,opacity 200ms ease}
+.btn.busy .lbl{filter:blur(2px);opacity:.6}
+#eye{display:grid;place-items:center;padding:0}
+#eye svg{width:22px;height:22px}
+@media (hover:hover) and (pointer:fine){.btn:hover{background:var(--navy-2)}.btn.main:hover{background:#6FA3FF}}
+
+/* Mode discret : euros floutés */
+.private .money{filter:blur(9px);user-select:none}
+.private svg .money{visibility:hidden}
+
+/* Verrou (identique à Crypto de poche) */
+.lock{position:fixed;inset:0;z-index:20;background:radial-gradient(90% 55% at 50% 0%,#17346A 0%,rgba(11,21,38,0) 65%) no-repeat,var(--night);transition:opacity 220ms var(--ease-out),transform 220ms var(--ease-out);display:grid;place-items:center;
+  padding:calc(24px + env(safe-area-inset-top,0px)) 24px calc(24px + env(safe-area-inset-bottom,0px))}
+.lock.out{opacity:0;transform:scale(1.04);pointer-events:none}
+.lockbox{width:100%;max-width:300px;display:grid;justify-items:center;gap:22px}
+.lockbox .brand{font-size:1.1rem}
+.dots{display:flex;gap:12px}
+.dots span{width:13px;height:13px;border-radius:50%;border:2px solid var(--blue);transition:background 120ms ease}
+.dots span.on{background:var(--blue)}
+.lockmsg{min-height:1.3em;font-size:.88rem;color:var(--coral);text-align:center}
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;width:100%}
+.pad button{aspect-ratio:1;border:0;border-radius:50%;background:var(--navy);font-family:var(--display);font-weight:500;font-size:1.4rem;transition:transform 120ms var(--ease-out),background 120ms ease}
+.pad button:active{transform:scale(.94);background:var(--navy-2)}
+.pad .ghost{visibility:hidden}
+.biobtn{display:flex;align-items:center;gap:8px;border:0;border-radius:999px;padding:10px 16px;background:var(--navy);color:var(--ice);font-weight:600;font-size:.88rem}
+.biobtn svg{width:20px;height:20px}
+.bioask{display:grid;gap:10px}
+.shake{animation:shake 280ms var(--ease-out)}
+@keyframes shake{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+@media (max-width:360px){.fig b{font-size:.92rem}.tile .v{font-size:1.05rem}}
+@media (prefers-reduced-motion:reduce){
+  .ring .arc,.ring::before,.meter i{transition:none}
+  .view.fade,.view.fade.fromR,.view.fade.fromL,.shake{animation:none}
+  .btn:active,.pad button:active,.pill:active{transform:none}
+}
+</style>
+</head>
+<body>
+
+<div class="lock" id="lock">
+  <div class="lockbox">
+    <div class="brand">Conso de poche</div>
+    <div class="sub" id="lockhint">Entre ton code</div>
+    <div class="dots" id="dots"></div>
+    <div class="lockmsg" id="lockmsg" role="alert"></div>
+    <div class="pad" id="pad">
+      <button type="button">1</button><button type="button">2</button><button type="button">3</button>
+      <button type="button">4</button><button type="button">5</button><button type="button">6</button>
+      <button type="button">7</button><button type="button">8</button><button type="button">9</button>
+      <button type="button" class="ghost" tabindex="-1" aria-hidden="true">0</button><button type="button">0</button><button type="button" aria-label="Effacer">⌫</button>
+    </div>
+    <button class="biobtn" id="bioBtn" type="button" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 11v3"/><path d="M8.5 7.5A5 5 0 0 1 17 11v2a13 13 0 0 1-1 5"/><path d="M7 11a5 5 0 0 1 .4-2"/><path d="M7 14a14 14 0 0 0 1.5 5"/><path d="M12 17v.5a9 9 0 0 1-1 4"/><path d="M4.5 9A8 8 0 0 1 19 7.5"/><path d="M3.5 13a14 14 0 0 1 0-1.5"/><path d="M20.5 11v1.5a16 16 0 0 1-.5 4"/></svg>Utiliser l'empreinte</button>
+  </div>
+</div>
+
+<main class="app" id="app">
+  <header class="top">
+    <div class="brand">Conso de poche</div>
+    <div class="status" id="status"><i></i><span id="asof">Chargement</span></div>
+  </header>
+
+  <nav class="tabs" id="tabs" role="tablist" aria-label="Volets">
+    <button type="button" role="tab" data-t="accueil" aria-selected="true">Accueil</button>
+    <button type="button" role="tab" data-t="hist" aria-selected="false">Historique</button>
+    <button type="button" role="tab" data-t="saisies" aria-selected="false" id="tabSaisies">Saisies</button>
+    <button type="button" role="tab" data-t="reglages" aria-selected="false">Réglages</button>
+  </nav>
+
+  <div class="note" id="note" hidden role="status"></div>
+  <div class="note bioask" id="bioAsk" hidden><span>Déverrouiller l'appli avec ton empreinte plutôt qu'avec le code ?</span><div class="acts"><button class="pill main" id="bioYes" type="button">Activer</button><button class="pill" id="bioNo" type="button">Non merci</button></div></div>
+
+  <!-- ACCUEIL -->
+  <div class="view" id="vAccueil">
+    <section class="pot" aria-label="En ce moment" aria-live="polite">
+      <div class="q">En ce moment, est-ce que je produis plus que je consomme ?</div>
+      <div class="ring" id="ring">
+        <svg viewBox="0 0 120 120" aria-hidden="true">
+          <defs><linearGradient id="gSun" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F5B83D"/><stop offset="1" stop-color="#FFE3A3"/></linearGradient></defs>
+          <circle cx="60" cy="60" r="52" fill="none" stroke="#1A2C4C" stroke-width="9"/>
+          <circle id="arcSun" class="arc" cx="60" cy="60" r="52" stroke="url(#gSun)" stroke-width="9"/>
+        </svg>
+        <div class="center">
+          <div class="answer" id="nowAns">…</div>
+          <div class="sub" id="nowCov"></div>
+        </div>
+      </div>
+      <div class="nowtext" id="nowText">Lecture du dernier relevé de Home Assistant.</div>
+      <div class="figs">
+        <div class="fig s"><b id="nowSol">—</b><span>Production solaire</span></div>
+        <div class="fig"><b id="nowCons">—</b><span>Conso maison</span></div>
+        <div class="fig"><b id="nowGrid">—</b><span>Tiré du réseau</span></div>
+      </div>
+      <div class="day" id="nowFoot"></div>
+    </section>
+
+    <section class="curve">
+      <h2>Dernières 24 heures</h2>
+      <div id="cToday"><p class="empty">La courbe apparaît dès que les relevés sont chargés.</p></div>
+      <div class="legend"><span style="--c:var(--blue)">Conso maison</span><span style="--c:var(--sun)">Production solaire</span></div>
+    </section>
+
+    <section class="block">
+      <h2><span id="yTitle">Hier</span> <span class="tempo" id="yTempo" hidden></span></h2>
+      <div class="tiles">
+        <div class="tile"><span class="l">Conso maison</span><span class="v" id="yCons">—</span><span class="n" id="yConsN">&nbsp;</span></div>
+        <div class="tile"><span class="l">Coût</span><span class="v money" id="yCost">—</span><span class="n" id="yCostN">&nbsp;</span></div>
+        <div class="tile"><span class="l">Acheté au réseau</span><span class="v" id="yBuy">—</span><span class="n" id="yBuyN">&nbsp;</span></div>
+        <div class="tile"><span class="l">Produit (solaire)</span><span class="v" id="ySol">—</span><span class="n money" id="ySolN">&nbsp;</span></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2 id="mTitle">Ce mois-ci</h2>
+      <div id="mRows"><p class="empty">En attente des chiffres.</p></div>
+      <div class="meter" id="mMeter" hidden><i id="mFill"></i><b id="mMark"></b></div>
+      <p class="foot" id="mNote"></p>
+    </section>
+
+    <section class="block">
+      <h2>Par rapport à l'an dernier</h2>
+      <div id="cmpRows"><p class="empty">En attente des chiffres.</p></div>
+      <p class="foot">Électricité achetée au réseau, mêmes jours un an plus tôt. En vert : moins que l'an dernier.</p>
+    </section>
+
+    <section class="block">
+      <h2>Granulés</h2>
+      <div id="pelRows"><p class="empty">En attente des chiffres.</p></div>
+    </section>
+  </div>
+
+  <!-- HISTORIQUE -->
+  <div class="view" id="vHist" hidden>
+    <section class="curve">
+      <h2>30 derniers jours</h2>
+      <div id="cDays"><p class="empty">Chargement…</p></div>
+      <div class="legend"><span style="--c:var(--blue)">Acheté au réseau</span><span style="--c:var(--sun)">Solaire</span></div>
+      <div class="cap" id="cDaysCap">Touche une barre pour voir le détail.</div>
+    </section>
+
+    <section class="curve">
+      <div class="curvehead">
+        <h2>Mois par mois</h2>
+        <div class="seg" id="segM" role="group" aria-label="Unité"><button type="button" data-v="eur" aria-pressed="true">€</button><button type="button" data-v="kwh" aria-pressed="false">kWh</button></div>
+      </div>
+      <div id="cMonths"><p class="empty">Chargement…</p></div>
+      <div class="legend"><span style="--c:var(--blue)">Cette année</span><span style="--c:#5A6E92">Un an plus tôt</span></div>
+      <div class="cap" id="cMonthsCap">Achats au réseau. Le mois en cours est partiel.</div>
+    </section>
+
+    <section class="block">
+      <h2>Saisons (12 juillet → 11 juillet)</h2>
+      <div class="tbl" id="seasons"><p class="empty">Chargement…</p></div>
+      <p class="foot" id="seasonsNote"></p>
+    </section>
+
+    <section class="block">
+      <h2>Par appareil</h2>
+      <label class="f">Mois<select id="devMonth"></select></label>
+      <div id="devRows" style="margin-top:6px"><p class="empty">Chargement…</p></div>
+      <p class="foot" id="devNote"></p>
+    </section>
+  </div>
+
+  <!-- SAISIES (Adrien seulement) -->
+  <div class="view" id="vSaisies" hidden>
+    <section class="block">
+      <h2>Recharge Tesla</h2>
+      <form id="fTesla" novalidate>
+        <div class="grid2">
+          <label class="f">Jour de la recharge<input id="tDate" type="date" required></label>
+          <label class="f">kWh chargés<input id="tKwh" type="text" inputmode="decimal" placeholder="ex. 21" required></label>
+        </div>
+        <button type="submit" class="pill main" id="tGo">Enregistrer la recharge</button>
+        <div class="confirm" id="tConfirm" hidden><div id="tConfirmText"></div><div class="acts"><button type="button" class="pill main" id="tYes">Ajouter</button><button type="button" class="pill" id="tNo">Annuler</button></div></div>
+        <div class="msg" id="tMsg" hidden></div>
+        <p class="hint">Écrit dans « Electricité », colonne N (kWh voiture) de la ligne du jour, onglet de la saison.</p>
+      </form>
+    </section>
+
+    <section class="block">
+      <h2>Sacs de granulés</h2>
+      <form id="fPel" novalidate>
+        <div class="grid2">
+          <label class="f">Date<input id="pDate" type="date" required></label>
+          <label class="f">Quoi<select id="pType"><option value="Ouverture sacs">Sacs ouverts</option><option value="Achat sacs">Sacs achetés</option></select></label>
+          <label class="f">Nombre de sacs<input id="pNb" type="text" inputmode="numeric" value="1" required></label>
+          <label class="f">Prix du sac (€)<input id="pPrix" type="text" inputmode="decimal" placeholder="ex. 6,70"></label>
+        </div>
+        <label class="f">Détail (facultatif)<input id="pDet" type="text" placeholder="ex. palette Brico, 15 kg" maxlength="200"></label>
+        <button type="submit" class="pill main" id="pGo">Enregistrer</button>
+        <div class="msg" id="pMsg" hidden></div>
+        <p class="hint">Ajouté en bas de l'onglet « Saisies » de « HA données ». Home Assistant le reprend dans l'heure (compteur de sacs, prix du sac).</p>
+      </form>
+    </section>
+
+    <section class="block">
+      <h2>Nouveaux tarifs Tempo</h2>
+      <form id="fTar" novalidate>
+        <label class="f">Date d'effet<input id="rDate" type="date" required></label>
+        <div class="grid3">
+          <span class="h">€/kWh</span><span class="h">Heures creuses</span><span class="h">Heures pleines</span>
+          <span class="tempo" style="--c:var(--t-bleu)">Bleu</span><input id="r0" type="text" inputmode="decimal" aria-label="Heures creuses jour Bleu"><input id="r1" type="text" inputmode="decimal" aria-label="Heures pleines jour Bleu">
+          <span class="tempo" style="--c:var(--t-blanc)">Blanc</span><input id="r2" type="text" inputmode="decimal" aria-label="Heures creuses jour Blanc"><input id="r3" type="text" inputmode="decimal" aria-label="Heures pleines jour Blanc">
+          <span class="tempo" style="--c:var(--t-rouge)">Rouge</span><input id="r4" type="text" inputmode="decimal" aria-label="Heures creuses jour Rouge"><input id="r5" type="text" inputmode="decimal" aria-label="Heures pleines jour Rouge">
+        </div>
+        <label class="f">Abonnement €/mois (facultatif)<input id="rAbo" type="text" inputmode="decimal"></label>
+        <button type="submit" class="pill main" id="rGo">Enregistrer les tarifs</button>
+        <div class="msg" id="rMsg" hidden></div>
+        <p class="hint">Ajouté à l'onglet « Tarifs » de « HA données » ; chaque tarif s'applique à partir de sa date d'effet. Le fichier « Electricité » n'est pas modifié.</p>
+      </form>
+    </section>
+
+    <section class="block">
+      <h2>Tarifs enregistrés</h2>
+      <div class="tbl" id="tarList"><p class="empty">Chargement…</p></div>
+    </section>
+
+    <section class="block">
+      <h2>Dernières saisies</h2>
+      <div id="logRows"><p class="empty">Chargement…</p></div>
+    </section>
+  </div>
+
+  <!-- RÉGLAGES -->
+  <div class="view" id="vReglages" hidden>
+    <section class="block">
+      <h2>Réglages</h2>
+      <div>
+        <div class="opt"><span>Masquer les montants à l'ouverture<small>Les euros restent floutés jusqu'à ce que tu touches l'œil.</small></span><button type="button" class="switch" id="optPrivate" role="switch" aria-checked="false" aria-label="Masquer les montants à l'ouverture"></button></div>
+        <div class="opt" id="optPushRow" hidden><span>Alerte si Home Assistant n'écrit plus<small id="pushInfo">Une notification sur ce téléphone si aucun relevé n'arrive pendant 3 heures.</small></span><button type="button" class="pill main" id="pushBtn">Activer</button></div>
+        <div class="opt" id="optBioRow" hidden><span>Empreinte<small id="bioInfo"></small></span><button type="button" class="pill" id="bioToggle"></button></div>
+        <div class="opt"><span>Verrouiller maintenant<small>Le code est redemandé tout de suite.</small></span><button type="button" class="pill" id="optLock">Verrouiller</button></div>
+        <div class="opt"><span>Accès<small id="roleInfo">—</small></span><span></span></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2>À propos des chiffres</h2>
+      <p class="foot" style="margin:0">En ce moment et 24 h : « HA données », onglet Releves (un relevé toutes les 15 minutes par Home Assistant). Jours, coûts et comparaisons : fichier « Electricité » (onglets de saison) quand il est rempli, sinon onglet Jours de « HA données » au tarif en vigueur (onglet Tarifs). Conso maison = réseau + solaire ; la puissance réseau est relevée en VA, assimilée à des watts. Échéancier : onglet Echeancier.</p>
+      <p class="foot" id="aboutState"></p>
+    </section>
+  </div>
+</main>
+
+<nav class="bar" aria-label="Actions">
+  <div class="in">
+    <button class="btn" id="eye" type="button" aria-label="Masquer les montants"></button>
+    <button class="btn main" id="refresh" type="button"><span class="lbl">Actualiser</span></button>
+  </div>
+</nav>
+
+<script>
+const $ = id => document.getElementById(id);
+const P = "cp_"; // stockage séparé de Crypto de poche (même domaine)
+const ls = {get:k=>{try{return localStorage.getItem(P+k)}catch(_){return null}}, set:(k,v)=>{try{localStorage.setItem(P+k,v)}catch(_){}}, del:k=>{try{localStorage.removeItem(P+k)}catch(_){}}};
+const fr = (v, d=0) => Number(v).toLocaleString("fr-FR", {minimumFractionDigits:d, maximumFractionDigits:d});
+const ok_ = v => v != null && !isNaN(v);
+const fE = v => ok_(v) ? fr(v, 2) + " €" : "—";
+const fE0 = v => ok_(v) ? fr(v, 0) + " €" : "—";
+const fK = (v, d=1) => ok_(v) ? fr(v, d) + " kWh" : "—";
+const fW = v => ok_(v) ? (v >= 1000 ? fr(v/1000, 2) + " kW" : fr(v, 0) + " W") : "—";
+const pctOf = (a, b) => (a == null || !b) ? null : (a - b) / b * 100;
+const fPct = p => p == null || !isFinite(p) ? "—" : (p > 0 ? "+" : p < 0 ? "−" : "") + fr(Math.abs(p), 0) + " %";
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const pad2 = n => String(n).padStart(2, "0");
+const MOIS = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
+const MOIS_C = ["janv.","févr.","mars","avr.","mai","juin","juil.","août","sept.","oct.","nov.","déc."];
+const JOURS = ["dimanche","lundi","mardi","mercredi","jeudi","vendredi","samedi"];
+const dOf = k => new Date(Date.UTC(+k.slice(0,4), +k.slice(5,7)-1, +k.slice(8,10)));
+const dayName = k => { const d = dOf(k); return `${JOURS[d.getUTCDay()]} ${d.getUTCDate()} ${MOIS[d.getUTCMonth()]}`; };
+const shortDay = k => `${+k.slice(8,10)}/${k.slice(5,7)}`;
+const hm = t => new Date(t).toLocaleTimeString("fr-FR", {hour:"2-digit", minute:"2-digit"});
+const todayKey = () => { const n = new Date(); return `${n.getFullYear()}-${pad2(n.getMonth()+1)}-${pad2(n.getDate())}`; };
+const addDays = (k, n) => { const d = dOf(k); d.setUTCDate(d.getUTCDate()+n); return `${d.getUTCFullYear()}-${pad2(d.getUTCMonth()+1)}-${pad2(d.getUTCDate())}`; };
+const dec = s => { s = String(s || "").replace(/\s/g, "").replace(",", "."); if (s === "") return null; const v = Number(s); return isNaN(v) ? NaN : v; };
+const TCOL = {Bleu:"var(--t-bleu)", Blanc:"var(--t-blanc)", Rouge:"var(--t-rouge)"};
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// Clé d'accès et adresse du script : reçues une seule fois par le lien de liaison (#k=…&api=…), puis gardées sur le téléphone.
+(function takeKey(){
+  const h = location.hash;
+  const m = h.match(/k=([A-Za-z0-9_-]{20,})/), a = h.match(/api=([^&]+)/);
+  if (m){
+    ls.set("apiKey", m[1]);
+    if (a){ const u = decodeURIComponent(a[1]); if (/^https:\/\/script\.google\.com\/(a\/[^/]+\/)?macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(u)) ls.set("api", u); }
+    ls.del("pinHash"); ls.del("pinSalt"); ls.del("lastData"); ls.del("lastHist"); // nouveau lien : nouveau code
+    history.replaceState(null, "", location.pathname);
+  }
+})();
+const KEY = () => ls.get("apiKey"), API = () => ls.get("api");
+const NOT_LINKED = "Cette appli n'est pas encore reliée. Ouvre une fois le lien de liaison reçu (dans Chrome).";
+
+function note(t, err){ const n = $("note"); if (!t){ n.hidden = true; return; } n.hidden = false; n.textContent = t; n.classList.toggle("err", !!err); }
+
+// ---------- Appels au script ----------
+const POSTS = {tesla:1, sac:1, tarif:1, sub:1};
+async function api(action, p){
+  const key = KEY(), url = API();
+  if (!key || !url) throw new Error(NOT_LINKED);
+  let r;
+  if (POSTS[action]) r = await fetch(url, {method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body: JSON.stringify({k:key, a:action, p})});
+  else { const q = new URLSearchParams({k:key, a:action}); if (p != null) q.set("p", JSON.stringify(p)); r = await fetch(url + "?" + q.toString(), {cache:"no-store"}); }
+  if (!r.ok) throw new Error("Le script ne répond pas (code " + r.status + "). Réessaie dans un instant.");
+  const j = await r.json();
+  if (!j.ok) throw new Error(j.error === "clé refusée" ? "Accès refusé. Rouvre le lien de liaison." : j.error);
+  return j.data;
+}
+
+// ---------- Accueil ----------
+const C = 2 * Math.PI * 52;
+$("arcSun").style.strokeDasharray = C; $("arcSun").style.strokeDashoffset = C;
+let D = null, H = null, role = ls.get("role") || "owner";
+
+function setStatusAge(){
+  const st = $("status");
+  if (!D || !D.now){ st.className = "status"; $("asof").textContent = D ? "Aucun relevé" : "Chargement"; return; }
+  const age = Math.round((Date.now() - D.now.t) / 60000);
+  st.className = "status " + (age <= 25 ? "live" : age <= 90 ? "late" : "old");
+  $("asof").textContent = "Relevé " + (age <= 1 ? "à l'instant" : age < 60 ? `il y a ${age} min` : age < 1440 ? `il y a ${Math.floor(age/60)} h ${pad2(age%60)}` : `il y a ${Math.floor(age/1440)} j`);
+}
+function renderNow(){
+  const N = D.now;
+  if (!N){ $("nowAns").textContent = "?"; $("nowText").textContent = "Aucun relevé trouvé dans l'onglet Releves."; return; }
+  const {sol, grid, cons} = N, cov = cons > 0 ? sol / cons : 0;
+  const yes = sol > 5 && (grid <= 80 || cov >= 0.95);
+  const a = $("nowAns"); a.textContent = yes ? "Oui" : "Non"; a.classList.toggle("yes", yes);
+  $("nowCov").textContent = sol > 5 ? `le solaire couvre ${fr(Math.min(1, cov)*100, 0)} %` : "pas de soleil";
+  $("nowText").textContent = sol <= 5 ? `Pas de production solaire en ce moment. La maison tire ${fW(grid)} du réseau.`
+    : yes ? `Le solaire (${fW(sol)}) couvre toute la maison (${fW(cons)}).`
+    : `${fW(sol)} produits pour ${fW(cons)} consommés : le réseau fournit le reste.`;
+  $("nowSol").textContent = fW(sol); $("nowCons").textContent = fW(cons); $("nowGrid").textContent = fW(grid);
+  requestAnimationFrame(() => { $("arcSun").style.strokeDashoffset = C - Math.max(0, Math.min(1, cov)) * C; });
+  $("ring").classList.add("on");
+  const age = Math.round((Date.now() - N.t) / 60000), t = new Date(N.t), same = t.toDateString() === new Date().toDateString();
+  let foot = `Relevé de ${hm(N.t)}${same ? "" : " le " + t.toLocaleDateString("fr-FR")}${N.tempo ? " · jour " + N.tempo : ""}`;
+  if (N.since) foot += `<br>${N.since.midnight ? "Depuis minuit" : "Depuis le " + shortDay(N.since.from)} : ${fK(N.since.buy)} achetés, ${fK(N.since.sol)} produits`;
+  if (age > 90) foot += `<br><span class="warn">Home Assistant n'a pas écrit depuis : les chiffres peuvent être en retard.</span>`;
+  $("nowFoot").innerHTML = foot;
+  setStatusAge();
+}
+function niceMax(m){ if (!(m > 0)) return 1; const p = 10 ** Math.floor(Math.log10(m)); const f = m / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * p; }
+function renderCurve(){
+  const pts = (D.curve || []).map(([m, g, s]) => ({t: m * 60000, g, s, c: g + s})).filter(p => p.t >= Date.now() - 26 * 3600e3);
+  if (pts.length < 2){ $("cToday").innerHTML = '<p class="empty">Il faut au moins deux relevés récents pour tracer la courbe.</p>'; return; }
+  const W = 440, Hh = 170, pl = 38, pr = 4, pt = 10, pb = 22;
+  const t0 = pts[0].t, t1 = pts[pts.length-1].t, span = Math.max(1, t1 - t0);
+  const max = niceMax(Math.max(...pts.map(p => p.c), 100));
+  const x = t => pl + (t - t0) * (W - pl - pr) / span, y = v => pt + (max - v) * (Hh - pt - pb) / max;
+  const line = k => pts.map((p, i) => `${i ? "L" : "M"}${x(p.t).toFixed(1)},${y(p[k]).toFixed(1)}`).join("");
+  const area = k => `${line(k)}L${x(t1).toFixed(1)},${Hh-pb}L${x(t0).toFixed(1)},${Hh-pb}Z`;
+  const lbl = v => v >= 1000 ? fr(v/1000, v % 1000 ? 1 : 0) + " kW" : fr(v, 0) + " W";
+  const grid = [0, max/2, max].map(v => `<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" stroke="#26395C"/><text x="${pl-6}" y="${y(v)+4}" font-size="10" text-anchor="end" fill="#93A6C6" font-family="Manrope, sans-serif">${lbl(v)}</text>`).join("");
+  const lab = [t0, t1].map((t, i) => `<text x="${x(t)}" y="${Hh-5}" font-size="10.5" fill="#93A6C6" text-anchor="${i ? "end" : "start"}" font-family="Manrope, sans-serif">${hm(t)}</text>`).join("");
+  $("cToday").innerHTML = `<svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Conso et production en watts sur les dernières 24 heures">
+    <defs><linearGradient id="gC" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4D8DFF" stop-opacity=".32"/><stop offset="1" stop-color="#4D8DFF" stop-opacity="0"/></linearGradient>
+    <linearGradient id="gS" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F5B83D" stop-opacity=".4"/><stop offset="1" stop-color="#F5B83D" stop-opacity="0"/></linearGradient></defs>
+    ${grid}<path d="${area("c")}" fill="url(#gC)"/><path d="${area("s")}" fill="url(#gS)"/>
+    <path d="${line("c")}" fill="none" stroke="#4D8DFF" stroke-width="2.2" stroke-linejoin="round"/>
+    <path d="${line("s")}" fill="none" stroke="#F5B83D" stroke-width="2.2" stroke-linejoin="round"/>
+    <circle cx="${x(t1)}" cy="${y(pts[pts.length-1].c)}" r="4.5" fill="#5FD3A0"/>${lab}</svg>`;
+}
+function tempoChip(el, c){ if (!c){ el.hidden = true; return; } el.hidden = false; el.textContent = "Jour " + c; el.style.setProperty("--c", TCOL[c] || "var(--t-bleu)"); }
+function renderYest(){
+  const y = D.yest;
+  if (!y){ $("yTitle").textContent = "Hier"; $("yCons").textContent = "—"; $("yConsN").textContent = "Pas de données pour hier."; return; }
+  $("yTitle").textContent = y.back === 0 ? `Hier, ${dayName(y.k)}` : `Dernier jour connu : ${dayName(y.k)}`;
+  tempoChip($("yTempo"), y.color);
+  const cons = y.kwh + (y.sol || 0);
+  $("yCons").textContent = fK(cons);
+  $("yConsN").textContent = y.sol != null && cons > 0 ? `dont ${fr(y.sol / cons * 100, 0)} % de solaire` : " ";
+  $("yCost").textContent = fE(y.eur);
+  $("yCostN").textContent = y.fromFile ? "fichier Electricité" : "calculé (Tarifs)";
+  $("yBuy").textContent = fK(y.kwh, 2);
+  $("yBuyN").textContent = y.hc != null ? `HC ${fr(y.hc, 2)} · HP ${fr(y.hp, 2)}` : " ";
+  $("ySol").textContent = fK(y.sol, 2);
+  $("ySolN").textContent = y.gain != null ? `${fE(y.gain)} économisés` : " ";
+}
+const line = (name, a, b, o={}) => `<div class="line${o.tot ? " tot" : ""}"><span class="nm">${name}</span><span class="a${o.aM ? " money" : ""}">${a}</span><span class="b${o.bM ? " money" : ""}${o.cls ? " " + o.cls : ""}">${b}</span></div>`;
+function renderMonth(){
+  const m = D.month;
+  $("mTitle").textContent = `${MOIS[m.M-1][0].toUpperCase() + MOIS[m.M-1].slice(1)} ${m.Y}`;
+  if (m.empty){ $("mRows").innerHTML = '<p class="empty">Le mois commence : pas encore de journée complète.</p>'; $("mMeter").hidden = true; $("mNote").textContent = ""; return; }
+  const ech = m.ech && m.ech.eur;
+  $("mRows").innerHTML = [
+    line(`À date<small>du 1er au ${m.to} ${MOIS[m.M-1]}${m.missing ? ` · ${m.missing} j sans données` : ""}</small>`, fK(m.kwh, 0), fE(m.eur), {bM: true}),
+    line("Solaire produit", fK(m.sol, 0), " "),
+    line(`Projection fin de mois<small>au rythme actuel${m.abo ? `, abonnement compris (${fE(m.abo)})` : ""}</small>`, fK(m.projK, 0), fE0(m.proj), {bM: true, tot: true}),
+    ech ? line(`Échéancier mensuel<small>${m.ech.from ? "depuis le " + shortDay(m.ech.from) + "/" + m.ech.from.slice(0,4) : esc(m.ech.type)}</small>`, " ", fE0(ech), {bM: true}) : ""
+  ].join("");
+  if (ech && m.proj != null){
+    $("mMeter").hidden = false;
+    const scale = Math.max(m.proj, ech) * 1.1, diff = m.proj - ech;
+    $("mFill").style.width = (m.proj / scale * 100).toFixed(1) + "%"; $("mFill").className = m.proj > ech ? "over" : "";
+    $("mMark").style.left = (ech / scale * 100).toFixed(1) + "%";
+    $("mNote").innerHTML = `Projection <b class="money ${diff > 0 ? "down" : "up"}">${diff > 0 ? "+" : diff < 0 ? "−" : ""}${fE0(Math.abs(diff))}</b> par rapport à l'échéancier (trait blanc).`;
+  } else { $("mMeter").hidden = true; $("mNote").textContent = ""; }
+}
+function renderCmp(){
+  $("cmpRows").innerHTML = (D.cmp || []).map(c => {
+    if (!c.prev.n) return line(esc(c.label), fK(c.cur.kwh, 0), "pas de données N−1");
+    const pk = pctOf(c.cur.kwh, c.prev.kwh), pe = pctOf(c.cur.eur, c.prev.eur);
+    return line(`${esc(c.label)}<small>l'an dernier : ${fK(c.prev.kwh, 0)} · <span class="money">${fE0(c.prev.eur)}</span></small>`,
+      `${fK(c.cur.kwh, 0)} <span class="${pk > 0 ? "down" : "up"}">${fPct(pk)}</span>`,
+      `<span class="money">${fE0(c.cur.eur)}</span> <span class="${pe > 0 ? "down" : "up"}">${fPct(pe)}</span>`);
+  }).join("");
+}
+function renderPel(){
+  const p = D.pel || {};
+  const rows = [
+    line("Sacs ouverts cette saison<small>compteur Home Assistant</small>", p.sacs != null ? `${fr(p.sacs, 0)} sac${p.sacs > 1 ? "s" : ""}` : "—", p.sacs != null && p.prix != null ? fE(p.sacs * p.prix) : "—", {bM: true}),
+    line("Prix du sac", " ", fE(p.prix), {bM: true})
+  ];
+  if (p.lines) rows.push(line("Sacs achetés cette saison<small>onglet Saisies</small>", `${fr(p.nAch, 0)} sacs`, fE(p.eAch), {bM: true}));
+  $("pelRows").innerHTML = rows.join("");
+}
+function renderTarifs(){
+  const el = $("tarList"), T = D.tarifs || [];
+  if (!T.length){ el.innerHTML = '<p class="empty">Aucun tarif dans l\'onglet « Tarifs » : les prix de l\'onglet de saison sont utilisés.</p>'; }
+  else el.innerHTML = `<table><thead><tr><th>Effet</th><th>HC Bleu</th><th>HP Bleu</th><th>HC Blanc</th><th>HP Blanc</th><th>HC Rouge</th><th>HP Rouge</th></tr></thead><tbody>${
+    T.slice().reverse().map(t => `<tr class="${t.from === D.tarifNow ? "cur" : ""}"><td>${shortDay(t.from)}/${t.from.slice(2,4)}${t.from > D.today ? " (à venir)" : t.from === D.tarifNow ? " (actuel)" : ""}</td>${t.p.map(v => `<td>${fr(v, 4)}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+  const cur = (T.find(t => t.from === D.tarifNow) || {}).p || D.seasonPrices;
+  if (cur) cur.forEach((v, i) => { const inp = $("r" + i); if (inp && !inp.value) inp.value = fr(v, 4); });
+}
+function renderLog(){
+  const S = D.saisies || [];
+  $("logRows").innerHTML = S.length ? S.map(s => line(`${esc(s.type)}<small>${/^\d{4}-/.test(s.d) ? shortDay(s.d) + "/" + s.d.slice(0,4) : esc(s.d)} · ${esc(s.by || "?")}${s.det ? " · " + esc(s.det) : ""}</small>`,
+    esc(s.val), s.prix !== "" && s.prix != null ? `<span class="money">${esc(fr(Number(s.prix) || 0, 2))} €</span>` : " ")).join("")
+    : '<p class="empty">Aucune saisie pour l\'instant.</p>';
+}
+function renderAbout(){
+  const s = D.state || {};
+  $("aboutState").textContent = `Fichier Electricité rempli jusqu'au ${s.filled ? shortDay(s.filled) : "?"} · onglet Jours jusqu'au ${s.joursTo ? shortDay(s.joursTo) : "?"} · ${s.nRel || 0} relevés lus · calculé à ${hm(D.at)}.`;
+}
+function applyRole(){
+  const ro = role !== "owner";
+  $("tabSaisies").hidden = ro; $("tabs").style.setProperty("--n", ro ? 3 : 4);
+  if (ro && tab === "saisies") showTab("accueil");
+  $("optPushRow").hidden = ro;
+  $("roleInfo").textContent = ro ? "Lecture seule : tous les chiffres, aucune saisie." : "Complet : lecture et saisies.";
+}
+function render(d){
+  D = d;
+  if (d.role && d.role !== role){ role = d.role; ls.set("role", role); }
+  applyRole();
+  const parts = [renderNow, renderCurve, renderYest, renderMonth, renderCmp, renderPel, renderAbout].concat(role === "owner" ? [renderTarifs, renderLog] : []);
+  for (const f of parts){ try{ f(); }catch(e){ console.error(e); } }
+  if (d.errs && d.errs.length) note("Une partie des chiffres manque : " + d.errs.join(" ; "), true);
+}
+
+// ---------- Historique ----------
+function barChart(el, items, series, opts){
+  const W = 440, Hh = 180, pl = 38, pr = 4, pt = 10, pb = 24;
+  const totals = items.map(it => opts.stack ? series.reduce((s, se) => s + (it.v[se.key] || 0), 0) : Math.max(...series.map(se => it.v[se.key] || 0)));
+  const max = niceMax(Math.max(...totals, 0.001));
+  const n = items.length, slot = (W - pl - pr) / n, bw = Math.max(2, slot * 0.7);
+  const y = v => pt + (max - v) * (Hh - pt - pb) / max;
+  const grid = [0, max/2, max].map(v => `<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" stroke="#26395C"/><text class="${opts.money ? "money" : ""}" x="${pl-6}" y="${y(v)+4}" font-size="10" text-anchor="end" fill="#93A6C6" font-family="Manrope, sans-serif">${fr(v, v < 10 && v % 1 ? 1 : 0)}${opts.unit || ""}</text>`).join("");
+  let bars = "";
+  items.forEach((it, i) => {
+    const x0 = pl + i * slot + (slot - bw) / 2;
+    if (opts.stack){ let acc = 0; series.forEach(se => { const v = it.v[se.key] || 0; if (v <= 0) return; bars += `<rect x="${x0.toFixed(1)}" y="${y(acc + v).toFixed(1)}" width="${bw.toFixed(1)}" height="${(y(acc) - y(acc + v)).toFixed(1)}" fill="${se.color}" rx="1.5"/>`; acc += v; }); }
+    else { const w = bw / series.length; series.forEach((se, j) => { const v = it.v[se.key]; if (v == null) return; bars += `<rect x="${(x0 + j*w).toFixed(1)}" y="${y(v).toFixed(1)}" width="${(w - 1).toFixed(1)}" height="${(y(0) - y(v)).toFixed(1)}" fill="${se.color}" rx="1.5"/>`; }); }
+    if (it.mark) bars += `<circle cx="${(x0 + bw/2).toFixed(1)}" cy="${Hh - pb + 6}" r="2.6" fill="${it.mark}"/>`;
+    bars += `<rect x="${(pl + i*slot).toFixed(1)}" y="${pt}" width="${slot.toFixed(1)}" height="${Hh-pt-pb+10}" fill="transparent" data-i="${i}" style="cursor:pointer"/>`;
+  });
+  const every = opts.every || 1;
+  const labels = items.map((it, i) => ((i % every === 0 && n - 1 - i >= every / 2) || i === n - 1) ? `<text x="${(pl + i*slot + slot/2).toFixed(1)}" y="${Hh - 4}" font-size="10" text-anchor="middle" fill="#93A6C6" font-family="Manrope, sans-serif">${esc(it.label)}</text>` : "").join("");
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="${esc(opts.aria || "")}" data-noswipe>${grid}${bars}${labels}</svg>`;
+  el.querySelector("svg").addEventListener("click", e => { const r = e.target.closest("[data-i]"); if (r) opts.onPick(items[+r.dataset.i]); });
+}
+const TDOT = {Bleu:"#4D8DFF", Blanc:"#E6EEFB", Rouge:"#FF6B6B"};
+function renderDays(){
+  const items = H.days.map(d => ({label: shortDay(d.k), v: {b: d.kwh || 0, s: d.sol || 0}, mark: d.c ? TDOT[d.c] : null, d}));
+  barChart($("cDays"), items, [{key:"b", color:"#4D8DFF"}, {key:"s", color:"#F5B83D"}], {stack: true, every: 7, aria: "kWh achetés et produits par jour sur 30 jours",
+    onPick: it => { const d = it.d; $("cDaysCap").innerHTML = d.kwh != null ? `${dayName(d.k)}${d.c ? " · jour " + d.c : ""} : ${fK(d.kwh)} achetés, ${fK(d.sol)} solaire, <span class="money">${fE(d.eur)}</span>${d.tesla ? ` · Tesla ${fr(d.tesla, 0)} kWh` : ""}` : `${dayName(d.k)} : pas de données.`; }});
+}
+let monthUnit = ls.get("monthUnit") || "eur";
+function renderMonths(){
+  const items = H.months.map(m => ({label: MOIS_C[m.m-1], v: {c: m.cur.n ? m.cur[monthUnit] : null, p: m.prev.n ? m.prev[monthUnit] : null}, m}));
+  barChart($("cMonths"), items, [{key:"c", color:"#4D8DFF"}, {key:"p", color:"#5A6E92"}], {stack: false, unit: monthUnit === "eur" ? " €" : "", money: monthUnit === "eur", aria: "Achats d'électricité par mois comparés à l'année précédente",
+    onPick: it => { const m = it.m; $("cMonthsCap").innerHTML = `${MOIS[m.m-1]} ${m.y}${m.partial ? " (en cours)" : ""} : ${m.cur.n ? `${fK(m.cur.kwh, 0)} · <span class="money">${fE0(m.cur.eur)}</span>` : "pas de données"} — un an plus tôt : ${m.prev.n ? `${fK(m.prev.kwh, 0)} · <span class="money">${fE0(m.prev.eur)}</span>` : "pas de données"}`; }});
+}
+document.querySelectorAll("#segM button").forEach(b => {
+  b.setAttribute("aria-pressed", b.dataset.v === monthUnit ? "true" : "false");
+  b.onclick = () => { monthUnit = b.dataset.v; ls.set("monthUnit", monthUnit); document.querySelectorAll("#segM button").forEach(x => x.setAttribute("aria-pressed", x === b ? "true" : "false")); if (H) renderMonths(); };
+});
+function renderSeasons(){
+  const rows = (H.seasons || []).map((s, i) => `<tr class="${i === 0 ? "cur" : ""}"><td>${esc(s.n)}</td><td>${fK(s.toDate.kwh, 0)}</td><td class="money">${fE0(s.toDate.eur)}</td><td>${s.full ? fK(s.full.kwh, 0) : "en cours"}</td><td class="money">${s.full ? fE0(s.full.eur) : ""}</td></tr>`);
+  $("seasons").innerHTML = rows.length ? `<table><thead><tr><th>Saison</th><th>À date</th><th>€ à date</th><th>Totale</th><th>€</th></tr></thead><tbody>${rows.join("")}</tbody></table>` : '<p class="empty">Aucune saison lue.</p>';
+  $("seasonsNote").textContent = `« À date » = du 12/07 au ${shortDay(addDays(H.today, -1))} de chaque saison. Électricité achetée au réseau.`;
+}
+function renderDevSelect(){
+  const sel = $("devMonth"), keep = sel.value, opts = [];
+  if (H.dev.ha) opts.push(`<option value="ha">${esc(H.dev.ha.label)}</option>`);
+  (H.dev.suivi || []).forEach((m, i) => opts.push(`<option value="${i}">${esc(m.name)}</option>`));
+  sel.innerHTML = opts.join("");
+  if (keep && [...sel.options].some(o => o.value === keep)) sel.value = keep;
+}
+function renderDevices(){
+  const v = $("devMonth").value, ha = v === "ha";
+  const src = ha ? H.dev.ha : (H.dev.suivi || [])[+v];
+  if (!src){ $("devRows").innerHTML = '<p class="empty">Rien pour ce mois.</p>'; $("devNote").textContent = ""; return; }
+  $("devRows").innerHTML = src.list.map(l => `<div class="line${l.tot ? " tot" : ""}"><span class="nm">${esc(l.name)}${l.sub ? `<small>${esc(l.sub)}</small>` : ""}${l.share != null && !l.tot ? `<div class="share"><i style="width:${(Math.min(1, l.share)*100).toFixed(1)}%"></i></div>` : ""}</span><span class="a">${l.kwh != null ? fK(l.kwh) : ""}${l.share != null && !l.tot ? `<br><span class="sub">${fr(l.share*100, 0)} %</span>` : ""}</span><span class="b money">${fE(l.eur)}</span></div>`).join("") || '<p class="empty">Rien pour ce mois.</p>';
+  $("devNote").textContent = ha ? `Du 1er au ${src.to} : index des prises Home Assistant (onglet Jours). Coûts ≈ kWh × prix moyen du mois (${fr(src.avg, 4)} €/kWh).` : "Onglet « Suivi mensuel » du fichier Electricité, rempli le 1er de chaque mois.";
+}
+$("devMonth").addEventListener("change", renderDevices);
+function renderHist(h){
+  H = h;
+  for (const f of [renderDays, renderMonths, renderSeasons, renderDevSelect, renderDevices]){ try{ f(); }catch(e){ console.error(e); } }
+}
+
+// ---------- Chargement ----------
+let busy = false, loadedAt = 0;
+function setBusy(on, btn){ busy = on; $("refresh").disabled = on; btn && btn.classList.toggle("busy", on); }
+async function load(force, btn){
+  if (busy) return; setBusy(true, btn);
+  try{ const d = await api("data", force ? 1 : null); render(d); ls.set("lastData", JSON.stringify(d)); loadedAt = Date.now(); if (!(d.errs && d.errs.length)) note(null); }
+  catch(e){ note(e.message, true); }
+  finally{ setBusy(false, btn); }
+}
+async function loadHist(force){
+  try{ const h = await api("hist", force ? 1 : null); renderHist(h); ls.set("lastHist", JSON.stringify(h)); }
+  catch(e){ if (tab === "hist") note(e.message, true); }
+}
+$("refresh").onclick = () => { load(true, $("refresh")); if (tab === "hist" || H) loadHist(true); };
+
+// ---------- Onglets ----------
+let tab = "accueil";
+const VIEWS = {accueil:"vAccueil", hist:"vHist", saisies:"vSaisies", reglages:"vReglages"};
+const order = () => Object.keys(VIEWS).filter(k => !(k === "saisies" && role !== "owner"));
+function showTab(t, dir){
+  if (t === tab || !order().includes(t)) return; tab = t;
+  document.querySelectorAll("#tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.t === t ? "true" : "false"));
+  for (const k in VIEWS){ const v = $(VIEWS[k]); v.hidden = k !== t; if (k === t && !reduceMotion){ v.classList.remove("fade", "fromR", "fromL"); void v.offsetWidth; v.classList.add("fade"); if (dir) v.classList.add(dir > 0 ? "fromR" : "fromL"); } }
+  window.scrollTo(0, 0);
+  if (t === "hist" && !H && KEY()) loadHist(false);
+}
+document.querySelectorAll("#tabs button").forEach(b => b.onclick = () => showTab(b.dataset.t));
+// Glisser le doigt à gauche ou à droite pour changer d'onglet (pas sur les graphiques ni les champs)
+(() => {
+  let sx = 0, sy = 0, st = 0, ok = false;
+  const blocked = el => { for (let e = el; e && e !== document.body; e = e.parentElement){
+    if (e.matches && e.matches("svg, input, textarea, select, .tbl, .lock, [data-noswipe]")) return true;
+    const ox = getComputedStyle(e).overflowX; if ((ox === "auto" || ox === "scroll") && e.scrollWidth > e.clientWidth + 2) return true; } return false; };
+  document.addEventListener("touchstart", e => { ok = e.touches.length === 1 && $("lock").hidden && !blocked(e.target); if (!ok) return; sx = e.touches[0].clientX; sy = e.touches[0].clientY; st = Date.now(); }, {passive: true});
+  document.addEventListener("touchend", e => {
+    if (!ok) return; ok = false;
+    const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
+    if (Date.now() - st > 700 || Math.abs(dx) < 60 || Math.abs(dx) < 1.8 * Math.abs(dy)) return;
+    const o = order(), i = o.indexOf(tab) + (dx < 0 ? 1 : -1);
+    if (i >= 0 && i < o.length) showTab(o[i], dx < 0 ? 1 : -1);
+  }, {passive: true});
+})();
+
+// ---------- Saisies (Adrien) ----------
+function msg(id, text, kind){ const el = $(id); el.hidden = !text; el.textContent = text || ""; el.className = "msg" + (kind ? " " + kind : ""); }
+(function(){ const t = todayKey(); $("tDate").value = addDays(t, -1); $("tDate").max = t; $("pDate").value = t; $("rDate").value = t; })();
+let teslaPending = null;
+async function teslaSend(confirm){
+  const p = teslaPending; if (!p) return;
+  $("tConfirm").hidden = true; $("tGo").disabled = true; msg("tMsg", confirm ? "Écriture dans le fichier Electricité…" : "Recherche de la ligne du jour…");
+  try{
+    const r = await api("tesla", confirm ? {date: p.date, kwh: p.kwh, confirm: true, expect: p.existing} : {date: p.date, kwh: p.kwh});
+    if (r.need){
+      p.existing = r.existing;
+      $("tConfirmText").innerHTML = `Il y a déjà <b>${fr(r.existing, 2)} kWh</b> notés le ${dayName(r.k)}. Ajouter ${fr(p.kwh, 2)} kWh, soit <b>${fr(r.total, 2)} kWh</b> au total ?`;
+      $("tConfirm").hidden = false; msg("tMsg", ""); return;
+    }
+    msg("tMsg", r.ok ? (r.existing > 0 ? `Ajouté : ${fr(p.kwh, 2)} kWh le ${dayName(r.k)} (total ${fr(r.total, 2)} kWh).` : `Enregistré : ${fr(p.kwh, 2)} kWh le ${dayName(r.k)}.`)
+      : `Écrit, mais la relecture donne ${r.got ?? "vide"} au lieu de ${fr(r.total, 2)}. Vérifie la cellule N${r.row} de l'onglet ${r.tab}.`, r.ok ? "ok" : "err");
+    if (r.ok) $("tKwh").value = "";
+    teslaPending = null; load(true); H = null;
+  }catch(e){ msg("tMsg", e.message, "err"); }
+  finally{ $("tGo").disabled = false; }
+}
+$("fTesla").addEventListener("submit", e => {
+  e.preventDefault();
+  const date = $("tDate").value, kwh = dec($("tKwh").value);
+  $("tConfirm").hidden = true; teslaPending = null;
+  if (!date) return msg("tMsg", "Choisis le jour de la recharge.", "err");
+  if (date > todayKey()) return msg("tMsg", "La date est dans le futur.", "err");
+  if (!(kwh > 0 && kwh < 300)) return msg("tMsg", "Indique un nombre de kWh entre 0 et 300.", "err");
+  teslaPending = {date, kwh, existing: 0}; teslaSend(false);
+});
+$("tYes").onclick = () => teslaSend(true);
+$("tNo").onclick = () => { teslaPending = null; $("tConfirm").hidden = true; msg("tMsg", "Rien n'a été écrit."); };
+
+let pelBusy = false;
+$("fPel").addEventListener("submit", async e => {
+  e.preventDefault(); if (pelBusy) return;
+  const date = $("pDate").value, nb = dec($("pNb").value), prix = dec($("pPrix").value), type = $("pType").value;
+  if (!date) return msg("pMsg", "Choisis une date.", "err");
+  if (!(nb > 0 && nb < 500 && Number.isInteger(nb))) return msg("pMsg", "Indique un nombre entier de sacs.", "err");
+  if (prix != null && !(prix > 0 && prix < 100)) return msg("pMsg", "Le prix du sac semble faux.", "err");
+  pelBusy = true; $("pGo").disabled = true; msg("pMsg", "Enregistrement…");
+  try{
+    await api("sac", {date, type, nb, prix: prix ?? "", det: $("pDet").value.trim()});
+    msg("pMsg", `Noté : ${nb} sac${nb > 1 ? "s" : ""} ${type === "Achat sacs" ? "acheté" : "ouvert"}${nb > 1 ? "s" : ""} le ${shortDay(date)}.`, "ok");
+    $("pDet").value = ""; load(true);
+  }catch(err){ msg("pMsg", err.message, "err"); }
+  finally{ pelBusy = false; $("pGo").disabled = false; }
+});
+
+let tarBusy = false;
+$("fTar").addEventListener("submit", async e => {
+  e.preventDefault(); if (tarBusy) return;
+  const date = $("rDate").value;
+  if (!date) return msg("rMsg", "Choisis la date d'effet.", "err");
+  const p = [0,1,2,3,4,5].map(i => dec($("r" + i).value));
+  if (!p.every(v => v > 0.01 && v < 3)) return msg("rMsg", "Chaque prix doit être en €/kWh, entre 0,01 et 3 (ex. 0,1356).", "err");
+  const abo = dec($("rAbo").value);
+  if (abo != null && !(abo >= 0 && abo < 200)) return msg("rMsg", "L'abonnement mensuel semble faux.", "err");
+  tarBusy = true; $("rGo").disabled = true; msg("rMsg", "Enregistrement…");
+  try{ await api("tarif", {date, p, abo: abo ?? ""}); msg("rMsg", `Tarifs enregistrés, appliqués à partir du ${dayName(date)}.`, "ok"); load(true); H = null; }
+  catch(err){ msg("rMsg", err.message, "err"); }
+  finally{ tarBusy = false; $("rGo").disabled = false; }
+});
+
+// ---------- Mode discret ----------
+const EYE_OPEN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+const EYE_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.6 5.1A10.8 10.8 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-2.6 3.5M6.6 6.6C3.8 8.3 2 12 2 12s3.6 7 10 7a9.7 9.7 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/><line x1="3" y1="3" x2="21" y2="21"/></svg>';
+function setPrivate(on){
+  document.body.classList.toggle("private", on);
+  $("eye").innerHTML = on ? EYE_OFF : EYE_OPEN;
+  $("eye").setAttribute("aria-label", on ? "Afficher les montants" : "Masquer les montants");
+}
+$("eye").onclick = () => setPrivate(!document.body.classList.contains("private"));
+const privStart = ls.get("private") === "1";
+$("optPrivate").setAttribute("aria-checked", privStart ? "true" : "false");
+$("optPrivate").onclick = () => { const on = $("optPrivate").getAttribute("aria-checked") !== "true"; $("optPrivate").setAttribute("aria-checked", on ? "true" : "false"); ls.set("private", on ? "1" : "0"); setPrivate(on); };
+setPrivate(privStart);
+
+// ---------- Alerte push (Adrien) : le script envoie un « réveil », le service worker lit le message ----------
+function idb(){ return new Promise((res, rej) => { const r = indexedDB.open("cp-owner", 1); r.onupgradeneeded = () => r.result.createObjectStore("kv"); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
+async function idbSet(k, v){ try{ const db = await idb(); await new Promise((res, rej) => { const t = db.transaction("kv", "readwrite"); t.objectStore("kv").put(v, k); t.oncomplete = res; t.onerror = () => rej(t.error); }); }catch(_){} }
+const b64uBytes = s => { const b = atob(s.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((s.length + 3) % 4)); return Uint8Array.from(b, c => c.charCodeAt(0)); };
+function pushState(){
+  const btn = $("pushBtn"), info = $("pushInfo");
+  if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)){ btn.hidden = true; info.textContent = "Installe l'appli sur l'écran d'accueil puis rouvre-la depuis l'icône pour recevoir les alertes."; return; }
+  const p = Notification.permission;
+  if (p === "granted" && ls.get("pushOn") === "1"){ btn.hidden = false; btn.textContent = "Activée"; btn.disabled = true; info.textContent = "Tu seras prévenu sur ce téléphone si aucun relevé n'arrive pendant 3 heures."; }
+  else if (p === "denied"){ btn.hidden = true; info.textContent = "Les notifications sont bloquées pour cette appli : réautorise-les dans les réglages du téléphone."; }
+  else { btn.hidden = false; btn.disabled = false; btn.textContent = "Activer"; }
+}
+$("pushBtn").onclick = async () => {
+  const btn = $("pushBtn"); btn.disabled = true; btn.textContent = "Activation…";
+  try{
+    const perm = await Notification.requestPermission();
+    if (perm !== "granted"){ pushState(); return; }
+    const reg = await navigator.serviceWorker.ready;
+    const {pub} = await api("vapid");
+    let sub = await reg.pushManager.getSubscription();
+    if (sub && ls.get("pushKey") !== pub){ await sub.unsubscribe(); sub = null; }
+    if (!sub) sub = await reg.pushManager.subscribe({userVisibleOnly: true, applicationServerKey: b64uBytes(pub)});
+    await idbSet("apiKey", KEY()); await idbSet("api", API());
+    await api("sub", {endpoint: sub.endpoint});
+    ls.set("pushOn", "1"); ls.set("pushKey", pub);
+  }catch(e){ note("Alertes : " + e.message, true); ls.set("pushOn", "0"); }
+  pushState();
+};
+
+// ---------- Code d'accès (6 chiffres) et empreinte : repris de Crypto de poche ----------
+// Le code est demandé à chaque ouverture, et au retour dans l'appli après 30 s en arrière-plan.
+let entry = "", started = false, firstPin = null;
+const PIN_LEN = 6;
+async function sha(s){ const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)); return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join(""); }
+// Le code n'est enregistré que sur ce téléphone (empreinte salée), jamais dans le code de l'appli.
+const hasPin = () => !!ls.get("pinHash");
+function dots(){ const d = $("dots"); if (d.children.length !== PIN_LEN) d.innerHTML = "<span></span>".repeat(PIN_LEN); [...d.children].forEach((x,i) => x.classList.toggle("on", i < entry.length)); }
+function lockHint(){ $("lockhint").textContent = hasPin() ? "Entre ton code" : firstPin ? "Confirme ton nouveau code" : "Choisis ton code à 6 chiffres"; }
+function unlock(){
+  const L = $("lock"); L.classList.add("out"); setTimeout(() => { L.hidden = true; }, 230);
+  entry = ""; firstPin = null;
+  if (started){ offerBio(); return; } started = true;
+  try{ const c = ls.get("lastData"); if (c) render(JSON.parse(c)); }catch(_){}
+  try{ const c = ls.get("lastHist"); if (c) renderHist(JSON.parse(c)); }catch(_){}
+  applyRole(); bioState(); pushState();
+  offerBio();
+  if (!KEY() || !API()){ note(NOT_LINKED, true); return; }
+  load(false).then(() => { if (tab === "hist") loadHist(false); });
+}
+function lock(){
+  const L = $("lock"); entry = ""; firstPin = null;
+  $("lockmsg").textContent = ""; lockHint(); dots();
+  L.hidden = false; L.classList.remove("out");
+  tryBio();
+}
+function fail(m){ const d = $("dots"); d.classList.remove("shake"); void d.offsetWidth; d.classList.add("shake"); $("lockmsg").textContent = m; entry = ""; setTimeout(dots, 220); }
+async function press(k){
+  if (k === "⌫"){ entry = entry.slice(0,-1); dots(); return; }
+  if (entry.length >= PIN_LEN) return;
+  entry += k; dots(); $("lockmsg").textContent = "";
+  if (entry.length < PIN_LEN) return;
+  if (hasPin()){
+    const wait = Number(ls.get("pinLockUntil") || 0) - Date.now();
+    if (wait > 0) return fail("Trop d'essais, réessaie dans " + Math.ceil(wait/1000) + " s");
+    if (await sha(ls.get("pinSalt") + ":" + entry) !== ls.get("pinHash")){
+      // Blocage après 5 codes faux : 30 s, puis 1 min, 2 min… à chaque nouvelle erreur.
+      const n = Number(ls.get("pinFails") || 0) + 1; ls.set("pinFails", String(n));
+      if (n >= 5){ const s = 30 * Math.pow(2, Math.min(n - 5, 8)); ls.set("pinLockUntil", String(Date.now() + s*1000)); return fail("Trop d'essais, réessaie dans " + s + " s"); }
+      return fail("Code incorrect" + (n >= 3 ? ` (encore ${5 - n} essai${5 - n > 1 ? "s" : ""})` : ""));
+    }
+    ls.set("pinFails", "0"); ls.set("pinLockUntil", "0");
+    return unlock();
+  }
+  if (!firstPin){ firstPin = entry; entry = ""; setTimeout(() => { dots(); lockHint(); }, 150); return; }
+  if (entry !== firstPin){ firstPin = null; lockHint(); return fail("Les deux codes sont différents, recommence"); }
+  const salt = [...crypto.getRandomValues(new Uint8Array(16))].map(x=>x.toString(16).padStart(2,"0")).join("");
+  const h = await sha(salt + ":" + entry);
+  ls.set("pinSalt", salt); ls.set("pinHash", h);
+  if (ls.get("pinHash") !== h) return fail("Impossible d'enregistrer le code sur ce téléphone");
+  unlock();
+}
+
+// Empreinte (capteur du téléphone, via WebAuthn) : rien ne quitte le téléphone.
+const b64e = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+async function bioAvailable(){ try{ return !!(window.PublicKeyCredential && PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable && await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()); }catch(_){ return false; } }
+let bioBusy = false;
+async function bioUnlock(){
+  const id = ls.get("bioId");
+  if (!id || bioBusy || $("lock").hidden) return;
+  bioBusy = true;
+  try{
+    const a = await navigator.credentials.get({publicKey: {challenge: crypto.getRandomValues(new Uint8Array(32)), allowCredentials: [{type: "public-key", id: b64uBytes(id), transports: ["internal"]}], userVerification: "required", timeout: 60000}});
+    const flags = a && a.response ? new Uint8Array(a.response.authenticatorData)[32] : 0;
+    if (flags & 0x04) unlock(); // 0x04 : l'utilisateur a bien été vérifié
+  }catch(_){ /* annulé : le code reste disponible */ }
+  finally{ bioBusy = false; }
+}
+function tryBio(){ const on = !!ls.get("bioId"); $("bioBtn").hidden = !on; if (on && document.visibilityState === "visible") setTimeout(bioUnlock, 250); }
+async function offerBio(){ const box = $("bioAsk"); if (ls.get("bioId") || ls.get("bioNo") === "1" || !(await bioAvailable())){ box.hidden = true; return; } box.hidden = false; }
+async function enableBio(){
+  const cred = await navigator.credentials.create({publicKey: {
+    challenge: crypto.getRandomValues(new Uint8Array(32)),
+    rp: {name: "Conso de poche"},
+    user: {id: crypto.getRandomValues(new Uint8Array(16)), name: "Conso de poche", displayName: "Conso de poche"},
+    pubKeyCredParams: [{type: "public-key", alg: -7}, {type: "public-key", alg: -257}],
+    authenticatorSelection: {authenticatorAttachment: "platform", userVerification: "required", residentKey: "discouraged"},
+    timeout: 60000, attestation: "none"}});
+  ls.set("bioId", b64e(cred.rawId)); ls.del("bioNo");
+}
+$("bioYes").onclick = async () => {
+  const b = $("bioYes"); b.disabled = true;
+  try{ await enableBio(); $("bioAsk").hidden = true; note("Empreinte activée : elle te sera demandée à l'ouverture, le code reste possible."); setTimeout(() => note(null), 4000); bioState(); }
+  catch(e){ note("Empreinte non activée" + (e && e.name === "NotAllowedError" ? " (annulé)." : " : " + e.message), true); }
+  b.disabled = false;
+};
+$("bioNo").onclick = () => { ls.set("bioNo", "1"); $("bioAsk").hidden = true; };
+$("bioBtn").onclick = bioUnlock;
+async function bioState(){
+  const row = $("optBioRow");
+  if (!(await bioAvailable())){ row.hidden = true; return; }
+  row.hidden = false; const on = !!ls.get("bioId");
+  $("bioInfo").textContent = on ? "Activée : demandée à l'ouverture, le code reste possible." : "Désactivée : seul le code est demandé.";
+  $("bioToggle").textContent = on ? "Désactiver" : "Activer";
+}
+$("bioToggle").onclick = async () => {
+  if (ls.get("bioId")){ ls.del("bioId"); ls.set("bioNo", "1"); }
+  else { try{ await enableBio(); }catch(e){ note("Empreinte non activée" + (e && e.name === "NotAllowedError" ? " (annulé)." : " : " + e.message), true); } }
+  bioState();
+};
+$("optLock").onclick = () => lock();
+
+lockHint(); dots(); tryBio();
+$("pad").addEventListener("pointerdown", e => { const b = e.target.closest("button"); if (b && !b.classList.contains("ghost")){ e.preventDefault(); press(b.textContent.trim()); } });
+$("pad").addEventListener("click", e => { if (e.detail === 0){ const b = e.target.closest("button"); if (b && !b.classList.contains("ghost")) press(b.textContent.trim()); } });
+document.addEventListener("keydown", e => { if ($("lock").hidden) return; if (/^[0-9]$/.test(e.key)) press(e.key); else if (e.key === "Backspace") press("⌫"); });
+// Reverrouillage : retour après 30 s en arrière-plan, ou page restaurée depuis le cache du navigateur.
+let hiddenAt = 0;
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden"){ hiddenAt = Date.now(); return; }
+  if (hiddenAt && Date.now() - hiddenAt > 30000 && $("lock").hidden) lock();
+  else if (!$("lock").hidden) tryBio();
+  hiddenAt = 0;
+  // Retour dans l'appli : on relit si les chiffres ont plus de 2 minutes.
+  if (started && KEY() && Date.now() - loadedAt > 120000) load(false);
+});
+window.addEventListener("pageshow", e => { if (e.persisted && $("lock").hidden) lock(); });
+// Appli ouverte : nouveau relevé toutes les 15 min, on relit toutes les 5 min ; l'âge du relevé se met à jour chaque minute.
+setInterval(() => { if (started && document.visibilityState === "visible" && KEY()) load(false); }, 5 * 60000);
+setInterval(setStatusAge, 60000);
+
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+</script>
+</body>
+</html>
