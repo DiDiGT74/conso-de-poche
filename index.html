@@ -45,8 +45,8 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .up{color:var(--mint)} .down{color:var(--coral)} .warn{color:var(--sun)}
 
 /* Onglets */
-.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:4;display:grid;grid-template-columns:repeat(var(--n,4),minmax(0,1fr));gap:4px;padding:4px;margin:-8px 0 -6px;border-radius:16px;background:rgba(19,33,58,.88);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line)}
-.tabs button{min-width:0;border:0;border-radius:12px;padding:10px 0;background:transparent;color:var(--mist);font-weight:600;font-size:.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background 180ms ease,color 180ms ease}
+.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:4;display:grid;grid-template-columns:repeat(var(--n,5),minmax(0,1fr));gap:4px;padding:4px;margin:-8px 0 -6px;border-radius:16px;background:rgba(19,33,58,.88);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line)}
+.tabs button{min-width:0;border:0;border-radius:12px;padding:10px 0;background:transparent;color:var(--mist);font-weight:600;font-size:.72rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background 180ms ease,color 180ms ease}
 .tabs button[aria-selected="true"]{background:linear-gradient(135deg,#2F6FE8,#6FA3FF);color:#06101F}
 .view{display:flex;flex-direction:column;gap:24px}
 .view.fade{animation:viewIn 260ms var(--ease-out)}
@@ -239,6 +239,7 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
   <nav class="tabs" id="tabs" role="tablist" aria-label="Volets">
     <button type="button" role="tab" data-t="accueil" aria-selected="true">Accueil</button>
     <button type="button" role="tab" data-t="hist" aria-selected="false">Historique</button>
+    <button type="button" role="tab" data-t="facture" aria-selected="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-1px;margin-right:2px"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg>Facture</button>
     <button type="button" role="tab" data-t="saisies" aria-selected="false" id="tabSaisies">Saisies</button>
     <button type="button" role="tab" data-t="reglages" aria-selected="false">Réglages</button>
   </nav>
@@ -338,13 +339,34 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
     </section>
 
     <section class="block">
+      <h2>Par appareil</h2>
+      <label class="f">Mois<select id="devMonth"></select></label>
+      <div id="devRows" style="margin-top:6px"><p class="empty">Chargement…</p></div>
+      <p class="foot" id="devNote"></p>
+    </section>
+
+    <section class="block">
       <h2>Saisons (12 juillet → 11 juillet)</h2>
       <div class="tbl" id="seasons"><p class="empty">Chargement…</p></div>
       <p class="foot" id="seasonsNote"></p>
     </section>
+  </div>
 
-    <section class="block" id="facSec" hidden>
-      <h2>Factures et échéancier</h2>
+  <!-- FACTURE -->
+  <div class="view" id="vFacture" hidden>
+    <section class="block" id="fEst">
+      <h2>Août et septembre (estimation)</h2>
+      <p id="fEstTxt" style="margin:6px 0;font-size:1.05rem"><span class="empty">En attente des chiffres.</span></p>
+      <p class="foot" style="margin:0">Estimation recalculée chaque jour, plus fiable au fil de l'hiver.</p>
+    </section>
+
+    <section class="block" id="fCost">
+      <h2>Depuis le 12 juillet</h2>
+      <div id="fCostRows"><p class="empty">En attente des chiffres.</p></div>
+    </section>
+
+    <section class="block" id="facSec">
+      <h2>Factures des années passées</h2>
       <div class="tbl" id="facTbl"></div>
       <p class="foot" id="facEst"></p>
       <div class="curve" style="margin-top:14px">
@@ -352,16 +374,18 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
         <div class="legend"><span style="--c:var(--blue)">Total TTC de l'année de facturation</span><span style="--c:#F5B83D">Estimation</span></div>
         <div class="pick" id="cFacPick" aria-live="polite"></div>
       </div>
-      <h3 style="font-size:.95rem;margin:16px 0 4px">Changements d'échéancier</h3>
+    </section>
+
+    <section class="block" id="echSec">
+      <h2>Historique des échéanciers</h2>
       <div class="tbl" id="echTbl"></div>
       <p class="foot">Année de facturation : du 11 juillet au 11 juillet. Régularisation : + à payer, − remboursé.</p>
     </section>
 
-    <section class="block">
-      <h2>Par appareil</h2>
-      <label class="f">Mois<select id="devMonth"></select></label>
-      <div id="devRows" style="margin-top:6px"><p class="empty">Chargement…</p></div>
-      <p class="foot" id="devNote"></p>
+    <section class="block" id="tarSec">
+      <h2>Tarifs en vigueur</h2>
+      <div class="tbl" id="tarNow"><p class="empty">Chargement…</p></div>
+      <p class="foot" id="aboNow"></p>
     </section>
   </div>
 
@@ -671,6 +695,28 @@ function renderMonth(){
   const rg = $("mReg"), r = D.reg;
   if (r && r.est != null){ rg.hidden = false; const mens = D.month && D.month.ech ? D.month.ech.eur : null; const y = r.to.slice(0,4); const half = r.est / 2; rg.innerHTML = r.est > 0 ? `<b>Août et septembre ${y}</b> (estimation) : <b class="money ${mens && half > mens * 1.15 ? "down" : "up"}">2 × ${fE0(half)}</b>${mens ? ` <small>(prélèvement habituel ${fE0(mens)})</small>` : ""}` : `<b>Août ${y}</b> (estimation) : remboursement d'environ <b class="money up">${fE0(Math.abs(r.est))}</b>, rien à payer en août et septembre`; }
   else rg.hidden = true;
+  rg.onclick = () => showTab("facture"); rg.style.cursor = "pointer"; rg.setAttribute("role", "button"); rg.tabIndex = 0; rg.onkeydown = e => { if (e.key === "Enter" || e.key === " ") showTab("facture"); };
+}
+function regHtml(r, mens){
+  const y = r.to.slice(0,4), half = r.est / 2;
+  return r.est > 0 ? `<b>Août et septembre ${y}</b> : <b class="money ${mens && half > mens * 1.15 ? "down" : "up"}">2 × ${fE0(half)}</b>${mens ? ` <small>(prélèvement actuel ${fE0(mens)})</small>` : ""}` : `<b>Août ${y}</b> : remboursement d'environ <b class="money up">${fE0(Math.abs(r.est))}</b> en août, rien à payer en août et septembre`;
+}
+function renderFacture(){
+  const r = D.reg, m = D.month, mens = m && m.ech ? m.ech.eur : null;
+  $("fEstTxt").innerHTML = r && r.est != null ? regHtml(r, mens) : '<span class="empty">Pas encore d\'estimation.</span>';
+  const rows = [];
+  if (r){
+    const aboS = D.abo ? D.abo * 12 * (r.n || 0) / 365 : 0, cost = r.eurTo + aboS;
+    rows.push(line(`Coût depuis le 12/07<small>électricité ${fE0(r.eurTo)}${aboS ? " + abonnement " + fE0(aboS) : ""} · ${r.n} j</small>`, " ", fE0(cost), {bM: true}));
+    const now = new Date(), mo = (now.getFullYear() - Number(r.from.slice(0,4))) * 12 + now.getMonth() + 1 - 9;  // octobre = 1
+    const nPay = Math.max(0, Math.min(r.nb || 0, mo));
+    if (mens && nPay) rows.push(line(`Prélevé depuis octobre<small>${nPay} mensualité${nPay > 1 ? "s" : ""} de ${fE0(mens)}</small>`, " ", fE0(mens * nPay), {bM: true}));
+    rows.push(line(`Prévu sur l'année<small>coût projeté · mensualités prévues ${fE0(r.plan)}</small>`, " ", fE0(r.proj), {bM: true, tot: true}));
+  }
+  $("fCostRows").innerHTML = rows.length ? rows.join("") : '<p class="empty">Pas encore de chiffres.</p>';
+  const T = D.tarifs || [], cur = (T.find(t => t.from === D.tarifNow) || T[T.length - 1] || {}).p || D.seasonPrices;
+  $("tarNow").innerHTML = cur ? `<table><thead><tr><th>€/kWh</th><th>Bleu</th><th>Blanc</th><th>Rouge</th></tr></thead><tbody><tr><td>Creuses</td><td>${fr(cur[0],4)}</td><td>${fr(cur[2],4)}</td><td>${fr(cur[4],4)}</td></tr><tr><td>Pleines</td><td>${fr(cur[1],4)}</td><td>${fr(cur[3],4)}</td><td>${fr(cur[5],4)}</td></tr></tbody></table>` : '<p class="empty">Tarifs indisponibles.</p>';
+  $("aboNow").textContent = D.abo ? `Abonnement : ${fE(D.abo)} par mois.` : "";
 }
 function renderCmp(){
   $("cmpRows").innerHTML = (D.cmp || []).map(c => {
@@ -710,7 +756,7 @@ function renderAbout(){
 }
 function applyRole(){
   const ro = role !== "owner";
-  $("tabSaisies").hidden = ro; $("tabs").style.setProperty("--n", ro ? 3 : 4);
+  $("tabSaisies").hidden = ro; $("tabs").style.setProperty("--n", ro ? 4 : 5);
   if (ro && tab === "saisies") showTab("accueil");
   $("optPushRow").hidden = ro;
   $("roleInfo").textContent = ro ? "Lecture seule : tous les chiffres, aucune saisie." : "Complet : lecture et saisies.";
@@ -719,7 +765,7 @@ function render(d){
   D = d;
   if (d.role && d.role !== role){ role = d.role; ls.set("role", role); }
   applyRole();
-  const parts = [renderNow, renderCurve, renderYest, renderToday, renderMonth, renderCmp, renderPel, renderAbout, renderFact].concat(role === "owner" ? [renderTarifs, renderLog] : []);
+  const parts = [renderNow, renderCurve, renderYest, renderToday, renderMonth, renderCmp, renderPel, renderAbout, renderFact, renderFacture].concat(role === "owner" ? [renderTarifs, renderLog] : []);
   for (const f of parts){ try{ f(); }catch(e){ console.error(e); } }
   if (d.errs && d.errs.length) note("Une partie des chiffres manque : " + d.errs.join(" ; "), true);
 }
@@ -784,8 +830,8 @@ const yrs = (a, b) => a.slice(2, 4) + "–" + b.slice(2, 4);
 const sgn = v => ok_(v) ? (v > 0 ? "+" : v < 0 ? "−" : "") + fE0(Math.abs(v)) : "—";
 function renderFact(){
   const sec = $("facSec"), fs = D && D.factures, es = D && D.echeancier;
-  if (!fs || !fs.length || !es){ sec.hidden = true; return; }   // ancien serveur : section masquée
-  sec.hidden = false;
+  if (!fs || !fs.length || !es){ sec.hidden = true; $("echSec").hidden = true; return; }   // ancien serveur : sections masquées
+  sec.hidden = false; $("echSec").hidden = false;
   const reg = D.reg, rows = fs.map((f, i) => {
     const nextE = f.next != null ? fE0(f.next) + "/mois" : "—";
     return `<tr><td>${yrs(f.from || "", f.to || "")}</td><td>${fK(f.kwh, 0)}</td><td class="money">${fE0(f.ttc)}</td><td class="money">${fE0(f.paid)}</td><td class="money">${sgn(f.solde)}</td><td class="money">${nextE}</td></tr>`;
@@ -896,7 +942,7 @@ $("refresh").onclick = () => { load(true, $("refresh")); if (tab === "hist" || H
 
 // ---------- Onglets ----------
 let tab = "accueil";
-const VIEWS = {accueil:"vAccueil", hist:"vHist", saisies:"vSaisies", reglages:"vReglages"};
+const VIEWS = {accueil:"vAccueil", hist:"vHist", facture:"vFacture", saisies:"vSaisies", reglages:"vReglages"};
 const order = () => Object.keys(VIEWS).filter(k => !(k === "saisies" && role !== "owner"));
 function showTab(t, dir){
   if (t === tab || !order().includes(t)) return; tab = t;
