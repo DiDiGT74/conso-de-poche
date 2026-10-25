@@ -45,11 +45,25 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .up{color:var(--mint)} .down{color:var(--coral)} .warn{color:var(--sun)}
 
 /* Onglets */
-.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:4;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;padding:4px;margin:-8px 0 -6px;border-radius:16px;background:rgba(19,33,58,.88);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line)}
+.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:4;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:2px;padding:3px;margin:-8px 0 -6px;border-radius:16px;background:rgba(19,33,58,.88);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line)}
 .tabs button{min-width:0;border:0;border-radius:12px;padding:10px 0;background:transparent;color:var(--mist);font-weight:600;font-size:.72rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background 180ms ease,color 180ms ease}
 .tabs button[aria-selected="true"]{background:linear-gradient(135deg,#2F6FE8,#6FA3FF);color:#06101F}
 .tabs button{padding-left:1px;padding-right:1px;font-size:.68rem}
-.tabs button svg{margin-right:1px!important}
+.tabs button svg{display:none}
+.tabs button[data-t=eau] svg{display:inline}
+.tabs button{font-size:.62rem;letter-spacing:-.01em}
+.eauNow{display:flex;align-items:center;gap:14px}
+.eauDot{width:46px;height:46px;border-radius:50%;flex:none;background:var(--c);box-shadow:0 0 0 5px color-mix(in srgb,var(--c) 25%,transparent)}
+.eauLvl{font-family:var(--display);font-size:1.15rem;font-weight:600}
+.eauU{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px}
+.eauU li{background:var(--navy-2);border-radius:12px;padding:9px 12px;font-size:.88rem}
+.eauU li b{display:block;font-size:.9rem;margin-bottom:2px}
+.eauU li span{color:var(--mist);font-size:.82rem;line-height:1.4}
+.eauT{font-size:.74rem;color:var(--mist);margin:10px 0 6px;text-transform:uppercase;letter-spacing:.05em}
+.eauStrip{display:grid;grid-template-columns:repeat(30,minmax(0,1fr));gap:2px}
+.eauStrip button{border:0;padding:0;height:34px;border-radius:3px;background:var(--c);opacity:.9}
+.eauStrip button[aria-pressed=true]{outline:2px solid var(--ice);opacity:1}
+.eauDet{min-height:2.6em;font-size:.86rem;margin:10px 0 0}
 .sunb h2::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--sun)}
 .gauge{position:relative;height:30px;border-radius:15px;background:var(--navy-2);overflow:hidden;margin-bottom:6px}
 .gauge i{position:absolute;inset:0 auto 0 0;width:0;border-radius:15px;background:linear-gradient(90deg,#E39A1B,#F5B83D);transition:width 500ms var(--ease-out)}
@@ -263,6 +277,7 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
     <button type="button" role="tab" data-t="solaire" aria-selected="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>Solaire</button>
     <button type="button" role="tab" data-t="poele" aria-selected="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-1px;margin-right:2px"><path d="M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2 1-3.2 2-4.2.2 1.2.8 2 1.7 2.4C10.3 8.5 11 5.5 12 3z"/></svg>Poêle</button>
     <button type="button" role="tab" data-t="facture" aria-selected="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-1px;margin-right:2px"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg>Facture</button>
+<button type="button" role="tab" data-t="eau" aria-selected="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-1px;margin-right:2px"><path d="M12 3s6 6.2 6 10.5a6 6 0 0 1-12 0C6 9.2 12 3 12 3z"/></svg>Eau</button>
   </nav>
 
   <div class="note" id="note" hidden role="status"></div>
@@ -408,6 +423,19 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
       <div id="solPayRows"></div>
       <p class="foot" id="solPayNote"></p>
     </section>
+  </div>
+
+  <!-- EAU -->
+  <div class="view" id="vEau" hidden>
+    <section class="block" id="eauSec" hidden>
+      <h2>Restrictions d'eau</h2>
+      <div class="eauNow"><span class="eauDot" id="eauDot"></span><div><div class="eauLvl" id="eauLvl"></div><div class="foot" style="margin:2px 0 0" id="eauUntil"></div></div></div>
+      <p class="foot"><a id="eauPdf" href="#" target="_blank" rel="noopener" style="color:var(--blue-soft)" hidden>Voir l'arrêté (PDF)</a></p>
+      <div id="eauUsWrap"><div class="eauT">Ce qui est interdit chez toi</div><ul class="eauU" id="eauUs"></ul></div>
+      <div id="eauHistWrap"><div class="eauT">30 derniers jours</div><div class="eauStrip" id="eauStrip"></div><p class="eauDet" id="eauDet">Touche une case pour voir le détail.</p><p class="foot" id="eauSum" style="margin-top:0"></p></div>
+      <p class="foot">Source : VigiEau, La Balme-de-Sillingy.</p>
+    </section>
+    <p class="empty" id="eauMsg" style="text-align:center;margin-top:12px" hidden></p>
   </div>
 
   <!-- FACTURE -->
@@ -1189,9 +1217,65 @@ async function loadHist(force){
 }
 $("refresh").onclick = () => { load(true, $("refresh")); if (tab === "hist" || H) loadHist(true); DV = null; if (!$("devSheet").hidden) loadDev(true).then(renderDev).catch(e => note(e.message, true)); else if (H) ensureDV(true); };
 
+
+// ---------- Eau (VigiEau, appel direct) ----------
+const EAU = {rien:["Aucune restriction","#5FD3A0"], vigilance:["Vigilance","#F5D63D"], alerte:["Alerte","#FF9F2E"], alerte_renforcee:["Alerte renforcée","#FF6B5E"], crise:["Crise","#B3202E"]};
+const EAU_ORD = ["rien", "vigilance", "alerte", "alerte_renforcee", "crise"];
+const eauLv = v => EAU_ORD.includes(v) ? v : "rien";
+let eauAt = 0;
+async function eauGet(u){ const r = await fetch(u); if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); }
+async function loadEau(){
+  if (Date.now() - eauAt < 60000) return; eauAt = Date.now();
+  const B = "https://api.vigieau.gouv.fr/api/", Q = "zones?lon=6.0395&lat=45.9672&profil=particulier";
+  try{
+    const [zr, hr] = await Promise.allSettled([eauGet(B + Q), eauGet(B + "data/commune/74026")]);
+    if (zr.status !== "fulfilled" && hr.status !== "fulfilled") throw new Error("down");
+    let zones = zr.status === "fulfilled" && Array.isArray(zr.value) ? zr.value.slice() : [];
+    if (zr.status === "fulfilled" && zones.length === 1){
+      for (const t of ["AEP", "SOU", "SUP"]){ try{ const a = await eauGet(B + Q + "&zoneType=" + t); if (Array.isArray(a)) a.forEach(z => { if (!zones.some(x => x.id ? x.id === z.id : (x.nom === z.nom && x.type === z.type))) zones.push(z); }); }catch(e){} }
+    }
+    renderEau(zr.status === "fulfilled" ? zones : null, hr.status === "fulfilled" ? hr.value : null);
+  }catch(e){ eauAt = 0; $("eauSec").hidden = true; $("eauMsg").textContent = "Infos sur l'eau indisponibles pour le moment."; $("eauMsg").hidden = false; }
+}
+function renderEau(zones, h){
+  $("eauMsg").hidden = true; $("eauSec").hidden = false;
+  const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  $("eauDot").parentElement.hidden = zones === null; $("eauUsWrap").hidden = true; $("eauPdf").hidden = true;
+  if (zones !== null){
+    let top = null; for (const z of zones) if (!top || EAU_ORD.indexOf(eauLv(z.niveauGravite)) > EAU_ORD.indexOf(eauLv(top.niveauGravite))) top = z;
+    const lv = top ? eauLv(top.niveauGravite) : "rien";
+    $("eauDot").style.setProperty("--c", EAU[lv][1]); $("eauLvl").textContent = EAU[lv][0];
+    const ar = lv !== "rien" && top && top.arrete || null, fin = ar && ar.dateFinValidite ? String(ar.dateFinValidite).slice(0, 10).split("-").reverse().join("/") : "";
+    $("eauUntil").textContent = fin ? "jusqu'au " + fin : (lv === "rien" ? "Pas de restriction en ce moment" : "");
+    if (ar && ar.cheminFichier){ $("eauPdf").href = ar.cheminFichier; $("eauPdf").hidden = false; }
+    if (lv !== "rien"){
+      const us = (top.usages || []).filter(u => u.concerneParticulier !== false && u.description && !/^\s*(pas de|aucune?)\s+(limitation|restriction)/i.test(u.description));
+      const home = u => /piscine|arros|pelouse|potager|massif|jardin|lavage|voiture|v[ée]hicule|remplissage/i.test(u.nom + " " + (u.thematique || "")) ? 0 : 1;
+      us.sort((a, b) => home(a) - home(b));
+      if (us.length){ $("eauUsWrap").hidden = false; $("eauUs").innerHTML = us.map(u => `<li><b>${esc(u.nom)}</b><span>${esc(u.description)}</span></li>`).join(""); }
+    }
+  }
+  const strip = $("eauStrip"), W = $("eauHistWrap");
+  const rs = h && Array.isArray(h.restrictions) ? h.restrictions.filter(r => r && r.date).sort((a, b) => a.date < b.date ? -1 : 1).slice(-30) : [];
+  W.hidden = !rs.length; if (!rs.length) return;
+  const cnt = {}; strip.innerHTML = ""; $("eauDet").textContent = "Touche une case pour voir le détail.";
+  const nm = {AEP: "eau potable", SOU: "souterraine", SUP: "superficielle"};
+  rs.forEach(r => {
+    let m = "rien"; for (const t of ["AEP", "SOU", "SUP"]) if (EAU_ORD.indexOf(eauLv(r[t])) > EAU_ORD.indexOf(m)) m = eauLv(r[t]);
+    cnt[m] = (cnt[m] || 0) + 1;
+    const b = document.createElement("button"); b.type = "button"; b.style.setProperty("--c", EAU[m][1]);
+    const d = r.date.split("-").reverse().join("/"); b.setAttribute("aria-label", d + " : " + EAU[m][0]);
+    b.onclick = () => { strip.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b ? "true" : "false"));
+      $("eauDet").innerHTML = "<b>" + d + "</b> : " + ["AEP", "SOU", "SUP"].map(t => nm[t] + " " + EAU[eauLv(r[t])][0].toLowerCase()).join(", "); };
+    strip.appendChild(b);
+  });
+  const parts = ["crise", "alerte_renforcee", "alerte", "vigilance"].filter(k => cnt[k]).map(k => cnt[k] + " jour" + (cnt[k] > 1 ? "s" : "") + " en " + EAU[k][0].toLowerCase());
+  $("eauSum").textContent = (parts.length ? parts.join(", ") : "Aucune restriction") + " sur " + rs.length + " jours.";
+}
+
 // ---------- Onglets ----------
 let tab = "accueil";
-const VIEWS = {accueil:"vAccueil", hist:"vHist", solaire:"vSolaire", poele:"vPoele", facture:"vFacture", saisies:"vSaisies", reglages:"vReglages"};
+const VIEWS = {accueil:"vAccueil", hist:"vHist", solaire:"vSolaire", poele:"vPoele", facture:"vFacture", eau:"vEau", saisies:"vSaisies", reglages:"vReglages"};
 const order = () => Object.keys(VIEWS).filter(k => k !== "reglages" && k !== "saisies");
 let prevTab = "accueil";
 function showTab(t, dir){
@@ -1201,6 +1285,7 @@ function showTab(t, dir){
   for (const k in VIEWS){ const v = $(VIEWS[k]); v.hidden = k !== t; if (k === t && !reduceMotion){ v.classList.remove("fade", "fromR", "fromL"); void v.offsetWidth; v.classList.add("fade"); if (dir) v.classList.add(dir > 0 ? "fromR" : "fromL"); } }
   window.scrollTo(0, 0);
   if (t === "hist" && !H && KEY()) loadHist(false);
+  if (t === "eau") loadEau();
 }
 document.querySelectorAll("#tabs button").forEach(b => b.onclick = () => showTab(b.dataset.t));
 $("gear").onclick = () => showTab(tab === "reglages" ? (order().includes(prevTab) ? prevTab : "accueil") : "reglages");
