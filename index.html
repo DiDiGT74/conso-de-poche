@@ -302,6 +302,7 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
       <div id="mRows"><p class="empty">En attente des chiffres.</p></div>
       <div class="meter" id="mMeter" hidden><i id="mFill"></i><b id="mMark"></b></div>
       <p class="foot" id="mNote"></p>
+      <p class="foot" id="mReg" hidden></p>
     </section>
 
     <section class="block">
@@ -340,6 +341,20 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
       <h2>Saisons (12 juillet → 11 juillet)</h2>
       <div class="tbl" id="seasons"><p class="empty">Chargement…</p></div>
       <p class="foot" id="seasonsNote"></p>
+    </section>
+
+    <section class="block" id="facSec" hidden>
+      <h2>Factures et échéancier</h2>
+      <div class="tbl" id="facTbl"></div>
+      <p class="foot" id="facEst"></p>
+      <div class="curve" style="margin-top:14px">
+        <div class="chart" id="cFac"></div>
+        <div class="legend"><span style="--c:var(--blue)">Total TTC de l'année de facturation</span><span style="--c:#F5B83D">Estimation</span></div>
+        <div class="pick" id="cFacPick" aria-live="polite"></div>
+      </div>
+      <h3 style="font-size:.95rem;margin:16px 0 4px">Changements d'échéancier</h3>
+      <div class="tbl" id="echTbl"></div>
+      <p class="foot">Année de facturation : du 11 juillet au 11 juillet. Régularisation : + à payer, − remboursé.</p>
     </section>
 
     <section class="block">
@@ -640,7 +655,8 @@ function renderMonth(){
   if (m.empty){ $("mRows").innerHTML = '<p class="empty">Le mois commence : pas encore de journée complète.</p>'; $("mMeter").hidden = true; $("mNote").textContent = ""; return; }
   const ech = m.ech && m.ech.eur;
   $("mRows").innerHTML = [
-    line(`À date<small>du 1er au ${m.to} ${MOIS[m.M-1]}${m.missing ? ` · ${m.missing} j sans données` : ""}</small>`, fK(m.kwh, 0), fE(m.eur), {bM: true}),
+    line(`À date<small>du 1er au ${m.to} ${MOIS[m.M-1]}${m.missing ? ` · ${m.missing} j sans données` : ""}${m.aboPro ? ", abonnement compris" : ""}</small>`, fK(m.kwh, 0), fE(m.eur + (m.aboPro || 0)), {bM: true}),
+    m.aboPro ? line("dont abonnement<small>au prorata du mois</small>", " ", fE(m.aboPro)) : "",
     line("Solaire produit", fK(m.sol, 0), " "),
     line(`Projection fin de mois<small>au rythme actuel${m.abo ? `, abonnement compris (${fE(m.abo)})` : ""}</small>`, fK(m.projK, 0), fE0(m.proj), {bM: true, tot: true}),
     ech ? line(`Échéancier mensuel<small>${m.ech.from ? "depuis le " + shortDay(m.ech.from) + "/" + m.ech.from.slice(0,4) : esc(m.ech.type)}</small>`, " ", fE0(ech), {bM: true}) : ""
@@ -652,6 +668,9 @@ function renderMonth(){
     $("mMark").style.left = (ech / scale * 100).toFixed(1) + "%";
     $("mNote").innerHTML = `Projection <b class="money ${diff > 0 ? "down" : "up"}">${diff > 0 ? "+" : diff < 0 ? "−" : ""}${fE0(Math.abs(diff))}</b> par rapport à l'échéancier (trait blanc).`;
   } else { $("mMeter").hidden = true; $("mNote").textContent = ""; }
+  const rg = $("mReg"), r = D.reg;
+  if (r && r.est != null){ rg.hidden = false; rg.innerHTML = `Estimation de la régularisation de juillet ${r.to.slice(0,4)} : <b class="money ${r.est > 0 ? "down" : "up"}">${r.est > 0 ? "+" : r.est < 0 ? "−" : ""}${fE0(Math.abs(r.est))}</b> ${r.est > 0 ? "à payer" : "à rembourser"} (estimation, voir Historique).`; }
+  else rg.hidden = true;
 }
 function renderCmp(){
   $("cmpRows").innerHTML = (D.cmp || []).map(c => {
@@ -700,7 +719,7 @@ function render(d){
   D = d;
   if (d.role && d.role !== role){ role = d.role; ls.set("role", role); }
   applyRole();
-  const parts = [renderNow, renderCurve, renderYest, renderToday, renderMonth, renderCmp, renderPel, renderAbout].concat(role === "owner" ? [renderTarifs, renderLog] : []);
+  const parts = [renderNow, renderCurve, renderYest, renderToday, renderMonth, renderCmp, renderPel, renderAbout, renderFact].concat(role === "owner" ? [renderTarifs, renderLog] : []);
   for (const f of parts){ try{ f(); }catch(e){ console.error(e); } }
   if (d.errs && d.errs.length) note("Une partie des chiffres manque : " + d.errs.join(" ; "), true);
 }
@@ -760,6 +779,27 @@ document.querySelectorAll("#segM button").forEach(b => {
   b.setAttribute("aria-pressed", b.dataset.v === monthUnit ? "true" : "false");
   b.onclick = () => { monthUnit = b.dataset.v; ls.set("monthUnit", monthUnit); document.querySelectorAll("#segM button").forEach(x => x.setAttribute("aria-pressed", x === b ? "true" : "false")); if (H) renderMonths(); };
 });
+const fdate = k => k ? k.slice(8) + "/" + k.slice(5, 7) + "/" + k.slice(2, 4) : "—";
+const yrs = (a, b) => a.slice(2, 4) + "–" + b.slice(2, 4);
+const sgn = v => ok_(v) ? (v > 0 ? "+" : v < 0 ? "−" : "") + fE0(Math.abs(v)) : "—";
+function renderFact(){
+  const sec = $("facSec"), fs = D && D.factures, es = D && D.echeancier;
+  if (!fs || !fs.length || !es){ sec.hidden = true; return; }   // ancien serveur : section masquée
+  sec.hidden = false;
+  const reg = D.reg, rows = fs.map((f, i) => {
+    const nextE = f.next != null ? fE0(f.next) + "/mois" : "—";
+    return `<tr><td>${yrs(f.from || "", f.to || "")}</td><td>${fK(f.kwh, 0)}</td><td class="money">${fE0(f.ttc)}</td><td class="money">${fE0(f.paid)}</td><td class="money">${sgn(f.solde)}</td><td class="money">${nextE}</td></tr>`;
+  });
+  if (reg) rows.push(`<tr class="cur"><td>${yrs(reg.from, reg.to)}<small> estim.</small></td><td>—</td><td class="money">≈ ${fE0(reg.proj)}</td><td class="money">${fE0(reg.plan)}<small> prévu</small></td><td class="money">≈ ${sgn(reg.est)}</td><td class="money">${D.month && D.month.ech ? fE0(D.month.ech.eur) + "/mois" : "—"}</td></tr>`);
+  $("facTbl").innerHTML = `<table><thead><tr><th>Année</th><th>kWh</th><th>Total TTC</th><th>Payé</th><th>Régul.</th><th>Échéancier suivant</th></tr></thead><tbody>${rows.join("")}</tbody></table>`;
+  $("facEst").innerHTML = reg ? `<b>Estimation</b> de la régularisation de juillet ${reg.to.slice(0, 4)} : coût réel depuis le 12/07 (${fE0(reg.eurTo)}, ${reg.n} j) projeté sur l'année${reg.method === "saison" ? " selon la saisonnalité de l'an dernier" : " au rythme actuel"} + abonnement (${fE0(reg.aboYear)}) = ${fE0(reg.proj)}, moins ${reg.nb} mensualités prévues (${fE0(reg.plan)}) = <b>${sgn(reg.est)}</b>. Ce n'est qu'une estimation.` : "";
+  const items = fs.map(f => ({key: "f" + f.from, label: yrs(f.from || "", f.to || ""), v: {t: f.ttc || 0}, f}));
+  if (reg) items.push({key: "fest", label: yrs(reg.from, reg.to) + "*", v: {t: reg.proj}, mark: "#F5B83D", est: reg});
+  barChart($("cFac"), items, [{key: "t", color: "#4D8DFF"}], {stack: false, money: true, aria: "Total TTC de la facture par année de facturation", 
+    onPick: it => { if (it.est){ const r = it.est; pickTable($("cFacPick"), [["Année", yrs(r.from, r.to) + "<small>estimation</small>"], ["Total TTC", "≈ " + fE0(r.proj), true], ["Prévu", fE0(r.plan), true], ["Régul.", "≈ " + sgn(r.est), true]]); return; }
+      const f = it.f; pickTable($("cFacPick"), [["Année", yrs(f.from || "", f.to || "") + `<small>${f.kva ? f.kva + " kVA" : " "}</small>`], ["kWh", fr(f.kwh, 0)], ["Total TTC", fE0(f.ttc), true], ["Payé", fE0(f.paid), true], ["Régul.", sgn(f.solde), true]]); }});
+  $("echTbl").innerHTML = `<table><thead><tr><th>Date</th><th>Montant</th><th>Type</th></tr></thead><tbody>${es.slice().reverse().map(e => `<tr><td>${fdate(e.from)}</td><td class="money">${fE(e.eur)}</td><td>${esc(e.type)}</td></tr>`).join("")}</tbody></table>`;
+}
 function renderSeasons(){
   const rows = (H.seasons || []).map((s, i) => `<tr class="${i === 0 ? "cur" : ""}"><td>${esc(s.n)}</td><td>${fK(s.toDate.kwh, 0)}</td><td class="money">${fE0(s.toDate.eur)}</td><td>${s.full ? fK(s.full.kwh, 0) : "en cours"}</td><td class="money">${s.full ? fE0(s.full.eur) : ""}</td></tr>`);
   $("seasons").innerHTML = rows.length ? `<table><thead><tr><th>Saison</th><th>À date</th><th>€ à date</th><th>Totale</th><th>€</th></tr></thead><tbody>${rows.join("")}</tbody></table>` : '<p class="empty">Aucune saison lue.</p>';
@@ -836,7 +876,7 @@ function renderDev(){
 }
 function renderHist(h){
   H = h;
-  for (const f of [renderDays, renderMonths, renderSeasons, renderDevSelect, renderDevices]){ try{ f(); }catch(e){ console.error(e); } }
+  for (const f of [renderDays, renderMonths, renderSeasons, renderFact, renderDevSelect, renderDevices]){ try{ f(); }catch(e){ console.error(e); } }
 }
 
 // ---------- Chargement ----------

@@ -1,5 +1,5 @@
 // Conso de poche : garde l'écran de l'appli disponible hors connexion. Les chiffres (script Google) ne sont jamais mis en cache.
-const CACHE = "conso-v3";
+const CACHE = "conso-v4";
 const SHELL = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL))); self.skipWaiting(); });
 self.addEventListener("activate", e => {
