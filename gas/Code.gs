@@ -196,7 +196,7 @@ function readHA_(S) {
   safe_(S, 'Releves', () => {
     const sh = ss.getSheetByName('Releves'), last = sh.getLastRow(), nc = sh.getLastColumn();
     if (last < 2) return;
-    const n = Math.min(last - 1, 110); // ~27 h de relevés (un toutes les 15 min)
+    const n = Math.min(last - 1, 210); // ~52 h de relevés (un toutes les 15 min) : aujourd'hui et hier en entier
     const head = sh.getRange(1, 1, 1, nc).getDisplayValues()[0];
     parseReleves_(S, [head].concat(cells_(sh.getRange(last - n + 1, 1, n, nc))));
   });
@@ -364,8 +364,8 @@ function getData_(force) {
   const cur = readEL_(S, false);
   const out = {
     at: Date.now(), today: S.today,
-    now: nowBlock_(S), curve: S.releves.map(r => [Math.round(r.t.getTime() / 60000), num_(r.Reseau_VA) || 0, num_(r.Solaire_W) || 0]),
-    yest: yesterday_(S), month: month_(S), reg: reg_(S), abo: aboAt_(S, S.today),
+    now: nowBlock_(S), curve: S.releves.slice(-110).map(r => [Math.round(r.t.getTime() / 60000), num_(r.Reseau_VA) || 0, num_(r.Solaire_W) || 0]),
+    poele: poele_(S), yest: yesterday_(S), month: month_(S), reg: reg_(S), abo: aboAt_(S, S.today),
     echeancier: S.echeancier.map(e => ({ from: e.from, eur: e.eur, type: e.type, rem: e.rem })), factures: S.factures, cmp: compare_(S), pel: pellets_(S),
     tarifs: S.tarifs.map(t => ({ from: t.from, p: TAR.map(k => t.p[k]), by: t.by, abo: t.abo })),
     tarifNow: (S.tarifs.filter(t => t.from <= S.today).pop() || {}).from || null,
@@ -407,6 +407,29 @@ function nowBlock_(S) {
     }
   }
   return out;
+}
+/* Poêle (Edilkamin) : plages de marche d'après les relevés de 15 min (Poele_phase On/Ignition = en marche) */
+function poele_(S) {
+  if (!S.releves.some(r => r.Poele_phase !== undefined && r.Poele_phase !== '')) return null;
+  const on = r => /^(on|ignition)$/i.test(String(r.Poele_phase || '').trim());
+  const day = (k, isToday) => {
+    const rs = S.releves.filter(r => r.Poele_phase !== undefined && r.Poele_phase !== '' && Utilities.formatDate(r.t, TZ, 'yyyy-MM-dd') === k);
+    const ranges = []; let st = null;
+    rs.forEach(r => {
+      const m = +Utilities.formatDate(r.t, TZ, 'H') * 60 + +Utilities.formatDate(r.t, TZ, 'm');
+      if (on(r)) { if (st === null) st = m; } else if (st !== null) { ranges.push([st, m]); st = null; }
+    });
+    if (st !== null) ranges.push([st, isToday ? null : 1440]);
+    let h = null;
+    if (isToday) { for (let i = rs.length - 1; i >= 0; i--) { const v = num_(rs[i].Poele_h_jour); if (v != null) { h = v; break; } } }
+    else {
+      const j = S.jours.filter(o => o.day === k)[0], v = j ? num_(j.Poele_heures) : null;
+      if (v != null) h = v;
+      else { const vs = rs.map(r => num_(r.Poele_h_jour)).filter(x => x != null); if (vs.length) h = Math.max.apply(null, vs); else if (rs.length) h = ranges.reduce((a, g) => a + (g[1] - g[0]) / 60, 0); }
+    }
+    return { k: k, h: h == null ? null : r2_(h), r: ranges, n: rs.length };
+  };
+  return { today: day(S.today, true), yest: day(addDays_(S.today, -1), false) };
 }
 function tempoName_(s) {
   s = String(s || '').toLowerCase();
@@ -492,10 +515,11 @@ function getHist_(force) {
   return out;
 }
 function days30_(S) {
-  const end = addDays_(S.today, -1), out = [];
+  const end = addDays_(S.today, -1), out = [], ph = {};
+  S.jours.forEach(j => { const v = num_(j.Poele_heures); if (v != null) ph[j.day] = r2_(v); });
   for (let i = 29; i >= 0; i--) {
     const k = addDays_(end, -i), d = day_(S, k);
-    out.push(d ? { k: k, kwh: r2_(d.kwh), sol: r2_(d.sol), eur: r2_(d.eur), c: d.color, tesla: d.tesla } : { k: k });
+    out.push(d ? { k: k, kwh: r2_(d.kwh), sol: r2_(d.sol), eur: r2_(d.eur), c: d.color, tesla: d.tesla, ph: ph[k] } : { k: k, ph: ph[k] });
   }
   return out;
 }

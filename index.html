@@ -88,6 +88,13 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.76rem;color:var(--mist);margin-top:8px}
 .legend span{display:inline-flex;align-items:center;gap:6px}
 .legend span::before{content:"";width:10px;height:10px;border-radius:3px;background:var(--c)}
+.pj{margin:0 0 12px}
+.pj .hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.pj .hd b{font-size:1.05rem}
+.pj .rg{font-size:.82rem;color:var(--mist);margin-top:2px;line-height:1.45}
+.pj .fr{position:relative;height:12px;border-radius:6px;background:var(--navy);margin-top:6px;overflow:hidden}
+.pj .fr i{position:absolute;top:0;bottom:0;background:#F5B83D;border-radius:3px}
+.pj .tk{display:flex;justify-content:space-between;font-size:.62rem;color:var(--mist);margin-top:2px}
 .cap{font-size:.8rem;color:var(--mist);min-height:1.3em;margin-top:6px;line-height:1.45}
 /* Tableau de lecture sous les graphiques : toujours là, mêmes colonnes, valeurs de la barre ou du point touché */
 .pick{margin-top:10px;background:var(--navy);border-radius:14px;padding:6px 10px 8px;min-height:62px}
@@ -409,6 +416,17 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
       <p class="foot" id="aboNow"></p>
     </section>
 
+    <section class="curve" id="poeleJSec" hidden>
+      <h2>Poêle</h2>
+      <div id="poeleJ"></div>
+      <div id="poeleHistW" hidden>
+        <p class="foot" style="margin:12px 0 4px">Heures de marche par jour</p>
+        <div class="chart" id="cPoele"></div>
+        <div class="pick" id="cPoelePick" aria-live="polite"></div>
+      </div>
+      <p class="foot">Précision ≈ 15 min (données du cloud Edilkamin).</p>
+    </section>
+
     <section class="block" id="poeleSec" hidden>
       <h2>Poêle contre PAC</h2>
       <p id="poeleConc" style="margin:6px 0;font-size:1.02rem"></p>
@@ -503,7 +521,7 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
     <section class="block">
       <h2>Installation solaire</h2>
       <div class="grid2">
-        <label class="f">Coût de l'installation (€)<input id="instCost" type="text" inputmode="decimal" placeholder="ex. 9500"></label>
+        <label class="f">Coût de l'installation (€)<input id="instCost" type="text" inputmode="decimal" placeholder="1050 par défaut"></label>
         <label class="f">Date d'installation<input id="instDate" type="date"></label>
       </div>
       <p class="foot">Sert à calculer le remboursement dans Historique. Gardé sur ce téléphone seulement.</p>
@@ -802,7 +820,7 @@ function render(d){
   D = d;
   if (d.role && d.role !== role){ role = d.role; ls.set("role", role); }
   applyRole();
-  const parts = [renderNow, renderCurve, renderYest, renderToday, renderMonth, renderCmp, renderPel, renderAbout, renderFact, renderFacture, renderPoele].concat(role === "owner" ? [renderTarifs, renderLog] : []);
+  const parts = [renderNow, renderCurve, renderYest, renderToday, renderMonth, renderCmp, renderPel, renderAbout, renderFact, renderFacture, renderPoele, renderPoeleJ].concat(role === "owner" ? [renderTarifs, renderLog] : []);
   for (const f of parts){ try{ f(); }catch(e){ console.error(e); } }
   if (d.errs && d.errs.length) note("Une partie des chiffres manque : " + d.errs.join(" ; "), true);
 }
@@ -959,7 +977,7 @@ function renderDev(){
 }
 function renderHist(h){
   H = h;
-  for (const f of [renderDays, renderMonths, renderSeasons, renderFact, renderDevSelect, renderDevices]){ try{ f(); }catch(e){ console.error(e); } }
+  for (const f of [renderDays, renderMonths, renderSeasons, renderFact, renderDevSelect, renderDevices, renderPoeleJ]){ try{ f(); }catch(e){ console.error(e); } }
   ensureDV(false);
 }
 
@@ -973,8 +991,9 @@ function renderExtras(){ for (const f of [renderSolar, renderPoele]){ try{ f(); 
 function solarMonths(){
   return ((DV && DV.months) || []).map(m => ({m, v: m.v && m.v.Solaire_kWh})).filter(x => x.v && ok_(x.v[1])).map(x => ({id: x.m.id, partial: !!x.m.partial, kwh: x.v[0] || 0, eur: x.v[1]}));
 }
+const SOL_COST = 1050, SOL_DATE = "2026-08-31";
 function renderSolar(){
-  const sec = $("solSec"), ms = solarMonths();
+  const sec = $("solSec"), ms = solarMonths().filter(x => x.id >= (ls.get("instDate") || SOL_DATE).slice(0, 7));
   if (!ms.length){ sec.hidden = true; return; }
   sec.hidden = false;
   const tot = a => a.reduce((t, x) => t + x.eur, 0), totK = a => a.reduce((t, x) => t + x.kwh, 0);
@@ -983,7 +1002,7 @@ function renderSolar(){
   const all = tot(ms), rows = [
     line(`Depuis le début<small>${mLabel(ms[0].id)} → ${mLabel(ms[ms.length - 1].id)} · ${fK(totK(ms), 0)} produits</small>`, " ", fE0(all), {tot: true, bM: true}),
     line(`Cette saison<small>depuis juillet ${y0} · ${fK(totK(seasonMs), 0)}</small>`, " ", seasonMs.length ? fE0(tot(seasonMs)) : "—", {bM: true})];
-  const cost = dec(ls.get("instCost")), idate = ls.get("instDate") || "";
+  const cost = dec(ls.get("instCost")) || SOL_COST, idate = ls.get("instDate") || SOL_DATE;
   let pay = "";
   if (cost > 0 && /^\d{4}-\d{2}/.test(idate)){
     const since = ms.filter(x => x.id >= idate.slice(0, 7)), saved = tot(since), pct = saved / cost * 100;
@@ -1013,6 +1032,29 @@ function suiviGran(){
   }
   return out;
 }
+const hrs = h => { const m = Math.round(h * 60); return `${Math.floor(m / 60)}h${pad2(m % 60)}`; };
+const clk = m => `${Math.floor(m / 60) % 24}h${pad2(m % 60)}`;
+function renderPoeleJ(){
+  const sec = $("poeleJSec"), PO = D && D.poele, days = ((H && H.days) || []).filter(d => ok_(d.ph));
+  const blocks = [];
+  if (PO) for (const [lab, o] of [["Aujourd'hui", PO.today], ["Hier", PO.yest]]){
+    if (!o || (!o.n && !ok_(o.h))) continue;
+    const r = o.r || [];
+    const txt = r.length ? r.map(g => `${clk(g[0])} → ${g[1] == null ? "en cours" : g[1] >= 1440 ? "minuit" : clk(g[1])}`).join(" · ") : "pas de marche";
+    const bars = r.map(g => { const a = g[0] / 14.4, b = (g[1] == null ? (o.k === (D.today || "") ? nowMin() : 1440) : g[1]) / 14.4; return `<i style="left:${a.toFixed(2)}%;width:${Math.max(0.8, b - a).toFixed(2)}%"></i>`; }).join("");
+    blocks.push(`<div class="pj"><div class="hd"><span>${lab}</span><b>${ok_(o.h) ? hrs(o.h) + " de marche" : "—"}</b></div><div class="rg">${txt}</div><div class="fr" role="img" aria-label="Plages de marche ${lab}">${bars}</div><div class="tk"><span>0h</span><span>6h</span><span>12h</span><span>18h</span><span>24h</span></div></div>`);
+  }
+  if (!blocks.length && !days.length){ sec.hidden = true; return; }
+  sec.hidden = false;
+  $("poeleJ").innerHTML = blocks.join("");
+  $("poeleHistW").hidden = !days.length;
+  if (days.length){
+    const items = days.map(d => ({key: d.k, label: shortDay(d.k), v: {h: d.ph}, d}));
+    barChart($("cPoele"), items, [{key: "h", color: "#F5B83D"}], {stack: true, unit: " h", every: items.length > 14 ? 3 : 1, aria: "Heures de marche du poêle par jour",
+      onPick: it => pickTable($("cPoelePick"), [["Jour", `${shortDay(it.d.k)}<small> </small>`], ["Marche", hrs(it.d.ph)], ["Heures", fr(it.d.ph, 1)]])});
+  }
+}
+function nowMin(){ const t = new Date(); return t.getHours() * 60 + t.getMinutes(); }
 function renderPoele(){
   const sec = $("poeleSec"), prix = D && D.pel && D.pel.prix, gran = suiviGran();
   const pac = ((DV && DV.months) || []).filter(m => m.v && m.v.PAC_kWh && m.v.PAC_kWh[0] >= 20 && ok_(m.v.PAC_kWh[1]));
