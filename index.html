@@ -89,27 +89,6 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .legend span{display:inline-flex;align-items:center;gap:6px}
 .legend span::before{content:"";width:10px;height:10px;border-radius:3px;background:var(--c)}
 .cap{font-size:.8rem;color:var(--mist);min-height:1.3em;margin-top:6px;line-height:1.45}
-/* Tableau de lecture sous les graphiques : toujours là, mêmes colonnes, valeurs de la barre ou du point touché */
-.pick{margin-top:10px;background:var(--navy);border-radius:14px;padding:6px 10px 8px;min-height:62px}
-.pick table{width:100%;border-collapse:collapse}
-.pick th{font-size:.64rem;line-height:1.2;color:var(--mist);font-weight:600;text-transform:uppercase;letter-spacing:.04em;text-align:right;vertical-align:bottom;padding:2px 3px 4px}
-.pick td{font-size:.95rem;font-weight:700;text-align:right;white-space:nowrap;padding:1px 3px;vertical-align:top}
-.pick th:first-child,.pick td:first-child{text-align:left;padding-left:0}
-.pick th:last-child,.pick td:last-child{padding-right:0}
-.pick td small{display:block;font-size:.7rem;font-weight:500;color:var(--mist);min-height:1.2em}
-.pick .dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--c);margin-right:5px;vertical-align:1px}
-.pick .na{color:var(--mist);font-weight:500}
-.chart svg{touch-action:pan-y}
-.line.tap{cursor:pointer}
-.line.tap .nm>.go{color:var(--blue-soft);font-weight:700;margin-left:4px}
-.line.tap:active{background:var(--navy)}
-/* Fiche appareil */
-.sheet{position:fixed;inset:0;z-index:10;background:rgba(4,9,18,.66);display:flex;align-items:flex-end;justify-content:center}
-.sheetbox{width:100%;max-width:520px;max-height:90dvh;overflow-y:auto;overscroll-behavior:contain;background:var(--night);border:1px solid var(--line);border-bottom:0;border-radius:22px 22px 0 0;
-  padding:16px max(18px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(18px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:12px;animation:sheetIn 260ms var(--ease-out)}
-@keyframes sheetIn{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
-.sheetbox h2{font-size:1rem;font-weight:600;margin:0}
-.xbtn{border:0;border-radius:50%;width:36px;height:36px;flex:none;background:var(--navy);color:var(--ice);font-size:1.2rem;line-height:1}
 .tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .tile{background:var(--navy);border-radius:14px;padding:12px 14px;display:grid;gap:3px;min-width:0}
 .tile .l{font-size:.72rem;color:var(--mist);font-weight:600;letter-spacing:.04em;text-transform:uppercase}
@@ -140,6 +119,28 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .tbl thead th{border-top:0;color:var(--mist);font-weight:600;font-size:.72rem;text-transform:uppercase;letter-spacing:.05em}
 .tbl tr.cur td{font-weight:700}
 .empty{color:var(--mist);font-size:.88rem;margin:0}
+
+/* Tableau de détail sous chaque graphique : toujours les mêmes lignes, valeurs de la barre touchée */
+.dt{margin-top:10px;background:var(--navy);border-radius:14px;padding:2px 14px}
+.dt .r{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:9px 0;border-top:1px solid var(--line);font-size:.95rem;min-height:2.6em}
+.dt .r:first-child{border-top:0}
+.dt .r span{color:var(--mist);min-width:0}
+.dt .r b{font-weight:700;text-align:right;white-space:nowrap}
+.dt .r.h span{color:var(--ice);font-weight:700;font-size:1rem}
+.dt .r.h b{font-weight:600}
+.dt .r b small{color:var(--mist);font-weight:500;font-size:.8rem;margin-left:4px}
+svg.pk{touch-action:pan-y;cursor:pointer;outline:none}
+svg.pk:focus-visible{outline:2px solid var(--blue);outline-offset:4px;border-radius:6px}
+svg.pk g.bg{opacity:.4;transition:opacity 120ms ease}
+svg.pk g.bg.on{opacity:1}
+/* Appareils : une ligne touchée ouvre sa courbe */
+.line.dev{cursor:pointer;border-radius:0}
+.line.dev .chev{display:inline-block;margin-left:6px;color:var(--mist);transition:transform 160ms var(--ease-out)}
+.line.dev[aria-expanded="true"] .chev{transform:rotate(90deg)}
+.line.dev[aria-expanded="true"]{color:var(--blue-soft)}
+.devpanel{padding:4px 0 14px;border-top:1px dashed var(--line)}
+.devpanel .curvehead{margin:8px 0 6px}
+.devpanel h3{margin:0;font-size:.85rem;font-weight:600;color:var(--mist)}
 
 /* Formulaires */
 form{display:grid;gap:10px}
@@ -207,7 +208,7 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
 @media (max-width:360px){.fig b{font-size:.92rem}.tile .v{font-size:1.05rem}}
 @media (prefers-reduced-motion:reduce){
   .ring .arc,.ring::before,.meter i{transition:none}
-  .view.fade,.view.fade.fromR,.view.fade.fromL,.shake,.sheetbox{animation:none}
+  .view.fade,.view.fade.fromR,.view.fade.fromL,.shake{animation:none}
   .btn:active,.pad button:active,.pill:active{transform:none}
 }
 </style>
@@ -272,9 +273,9 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
 
     <section class="curve">
       <h2>Dernières 24 heures</h2>
-      <div class="chart" id="cToday"><p class="empty">La courbe apparaît dès que les relevés sont chargés.</p></div>
+      <div id="cToday"><p class="empty">La courbe apparaît dès que les relevés sont chargés.</p></div>
       <div class="legend"><span style="--c:var(--blue)">Conso maison</span><span style="--c:var(--sun)">Production solaire</span></div>
-      <div class="pick" id="cTodayPick" aria-live="polite"></div>
+      <div class="dt" id="cTodayDt" aria-live="polite" hidden></div>
     </section>
 
     <section class="block">
@@ -287,13 +288,13 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
       </div>
     </section>
 
-    <section class="block">
-      <h2><span id="ajTitle">Aujourd'hui</span> <span class="tempo" id="ajTempo" hidden></span></h2>
+    <section class="block" id="tBlock" hidden>
+      <h2><span id="tTitle">Aujourd'hui</span> <span class="tempo" id="tTempo" hidden></span></h2>
       <div class="tiles">
-        <div class="tile"><span class="l">Conso maison</span><span class="v" id="ajCons">—</span><span class="n" id="ajConsN">&nbsp;</span></div>
-        <div class="tile"><span class="l">Coût</span><span class="v money" id="ajCost">—</span><span class="n" id="ajCostN">&nbsp;</span></div>
-        <div class="tile"><span class="l">Acheté au réseau</span><span class="v" id="ajBuy">—</span><span class="n" id="ajBuyN">&nbsp;</span></div>
-        <div class="tile"><span class="l">Produit (solaire)</span><span class="v" id="ajSol">—</span><span class="n money" id="ajSolN">&nbsp;</span></div>
+        <div class="tile"><span class="l">Conso maison</span><span class="v" id="tCons">—</span><span class="n" id="tConsN">&nbsp;</span></div>
+        <div class="tile"><span class="l">Coût</span><span class="v money" id="tCost">—</span><span class="n" id="tCostN">&nbsp;</span></div>
+        <div class="tile"><span class="l">Acheté au réseau</span><span class="v" id="tBuy">—</span><span class="n" id="tBuyN">&nbsp;</span></div>
+        <div class="tile"><span class="l">Produit (solaire)</span><span class="v" id="tSol">—</span><span class="n money" id="tSolN">&nbsp;</span></div>
       </div>
     </section>
 
@@ -320,9 +321,10 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
   <div class="view" id="vHist" hidden>
     <section class="curve">
       <h2>30 derniers jours</h2>
-      <div class="chart" id="cDays"><p class="empty">Chargement…</p></div>
+      <div id="cDays"><p class="empty">Chargement…</p></div>
       <div class="legend"><span style="--c:var(--blue)">Acheté au réseau</span><span style="--c:var(--sun)">Solaire</span></div>
-      <div class="pick" id="cDaysPick" aria-live="polite"></div>
+      <div class="dt" id="cDaysDt" aria-live="polite" hidden></div>
+      <div class="cap">Touche une barre (ou glisse le doigt) pour changer de jour.</div>
     </section>
 
     <section class="curve">
@@ -330,10 +332,10 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
         <h2>Mois par mois</h2>
         <div class="seg" id="segM" role="group" aria-label="Unité"><button type="button" data-v="eur" aria-pressed="true">€</button><button type="button" data-v="kwh" aria-pressed="false">kWh</button></div>
       </div>
-      <div class="chart" id="cMonths"><p class="empty">Chargement…</p></div>
+      <div id="cMonths"><p class="empty">Chargement…</p></div>
       <div class="legend"><span style="--c:var(--blue)">Cette année</span><span style="--c:#5A6E92">Un an plus tôt</span></div>
-      <div class="pick" id="cMonthsPick" aria-live="polite"></div>
-      <p class="foot">Achats au réseau. Le mois en cours est partiel.</p>
+      <div class="dt" id="cMonthsDt" aria-live="polite" hidden></div>
+      <div class="cap">Achats au réseau. Le mois en cours est partiel. Touche une barre pour changer de mois.</div>
     </section>
 
     <section class="block">
@@ -346,19 +348,9 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
       <h2>Par appareil</h2>
       <label class="f">Mois<select id="devMonth"></select></label>
       <div id="devRows" style="margin-top:6px"><p class="empty">Chargement…</p></div>
+      <p class="hint" style="margin-top:6px">Touche un appareil pour voir sa courbe, jour par jour ou mois par mois.</p>
       <p class="foot" id="devNote"></p>
     </section>
-  </div>
-
-  <!-- Fiche d'un appareil (ouverte depuis « Par appareil ») -->
-  <div class="sheet" id="devSheet" hidden role="dialog" aria-modal="true" aria-labelledby="dsTitle">
-    <div class="sheetbox">
-      <div class="curvehead"><h2 id="dsTitle">Appareil</h2><button type="button" class="xbtn" id="dsClose" aria-label="Fermer">✕</button></div>
-      <div class="seg" id="segD" role="group" aria-label="Période" style="align-self:flex-start"><button type="button" data-v="day" aria-pressed="true">Par jour</button><button type="button" data-v="month" aria-pressed="false">Par mois</button></div>
-      <div class="chart" id="dsChart"><p class="empty">Chargement…</p></div>
-      <div class="pick" id="dsPick" aria-live="polite"></div>
-      <p class="foot" id="dsNote" style="margin:0"></p>
-    </div>
   </div>
 
   <!-- SAISIES (Adrien seulement) -->
@@ -474,23 +466,6 @@ const todayKey = () => { const n = new Date(); return `${n.getFullYear()}-${pad2
 const addDays = (k, n) => { const d = dOf(k); d.setUTCDate(d.getUTCDate()+n); return `${d.getUTCFullYear()}-${pad2(d.getUTCMonth()+1)}-${pad2(d.getUTCDate())}`; };
 const dec = s => { s = String(s || "").replace(/\s/g, "").replace(",", "."); if (s === "") return null; const v = Number(s); return isNaN(v) ? NaN : v; };
 const TCOL = {Bleu:"var(--t-bleu)", Blanc:"var(--t-blanc)", Rouge:"var(--t-rouge)"};
-const JOURS_C = ["dim.","lun.","mar.","mer.","jeu.","ven.","sam."];
-const dayShort = k => `${JOURS_C[dOf(k).getUTCDay()]} ${shortDay(k)}`;
-const NA = '<span class="na">—</span>';
-const n1 = (v, d=1) => ok_(v) ? fr(v, d) : NA;
-const tdot = c => c ? `<span class="dot" style="--c:${TCOL[c] || "var(--t-bleu)"}"></span>${c}` : NA;
-// Tableau de lecture : cols = [[en-tête, valeur (HTML), montant ?], …] ; même structure à chaque sélection, donc même place.
-function pickTable(el, cols){
-  el.innerHTML = `<table><thead><tr>${cols.map(c => `<th scope="col">${c[0]}</th>`).join("")}</tr></thead><tbody><tr>${cols.map(c => `<td${c[2] ? ' class="money"' : ""}>${c[1]}</td>`).join("")}</tr></tbody></table>`;
-}
-// Sélection au doigt (toucher ou glisser) sur un graphique : idx(xSvg) → index de l'élément, choose(i) applique.
-function scrub(svg, W, idx, choose){
-  let down = false;
-  const at = e => { const r = svg.getBoundingClientRect(); return idx((e.clientX - r.left) * W / r.width); };
-  svg.addEventListener("pointerdown", e => { down = true; choose(at(e)); });
-  svg.addEventListener("pointermove", e => { if (down) choose(at(e)); });
-  for (const t of ["pointerup", "pointercancel", "pointerleave"]) svg.addEventListener(t, () => { down = false; });
-}
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 // Clé d'accès et adresse du script : reçues une seule fois par le lien de liaison (#k=…&api=…), puis gardées sur le téléphone.
@@ -514,18 +489,11 @@ const POSTS = {tesla:1, sac:1, tarif:1, sub:1};
 async function api(action, p){
   const key = KEY(), url = API();
   if (!key || !url) throw new Error(NOT_LINKED);
-  const call = async () => {
-    let r;
-    if (POSTS[action]) r = await fetch(url, {method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body: JSON.stringify({k:key, a:action, p})});
-    else { const q = new URLSearchParams({k:key, a:action}); if (p != null) q.set("p", JSON.stringify(p)); r = await fetch(url + "?" + q.toString(), {cache:"no-store"}); }
-    if (!r.ok) throw new Error("Le script ne répond pas (code " + r.status + "). Réessaie dans un instant.");
-    const txt = await r.text();
-    try{ return JSON.parse(txt); }catch(_){ return null; } // page d'erreur HTML de Google au lieu du JSON
-  };
-  let j = await call();
-  // Une page d'erreur (script trop long, démarrage à froid…) : on réessaie une fois, sauf pour les écritures.
-  if (!j && !POSTS[action]){ await new Promise(res => setTimeout(res, 1500)); j = await call(); }
-  if (!j) throw new Error("Le script Google a renvoyé une page d'erreur au lieu des chiffres (souvent un calcul trop long). Réessaie dans une minute ; si ça continue, Actualiser.");
+  let r;
+  if (POSTS[action]) r = await fetch(url, {method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body: JSON.stringify({k:key, a:action, p})});
+  else { const q = new URLSearchParams({k:key, a:action}); if (p != null) q.set("p", JSON.stringify(p)); r = await fetch(url + "?" + q.toString(), {cache:"no-store"}); }
+  if (!r.ok) throw new Error("Le script ne répond pas (code " + r.status + "). Réessaie dans un instant.");
+  const j = await r.json();
   if (!j.ok) throw new Error(j.error === "clé refusée" ? "Accès refusé. Rouvre le lien de liaison." : j.error);
   return j.data;
 }
@@ -562,9 +530,28 @@ function renderNow(){
   setStatusAge();
 }
 function niceMax(m){ if (!(m > 0)) return 1; const p = 10 ** Math.floor(Math.log10(m)); const f = m / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * p; }
+// Tableau de détail : un titre (période) puis des lignes fixes [libellé, valeur, classe]
+function dtable(el, head, rows){
+  el.hidden = false;
+  el.innerHTML = `<div class="r h"><span>${head[0]}</span><b>${head[1] || ""}</b></div>` + rows.map(([l, v, cls]) => `<div class="r"><span>${l}</span><b class="${cls || ""}">${v}</b></div>`).join("");
+}
+// Toucher ou glisser le doigt sur un graphique : idxAt(x en unités du viewBox) → index choisi
+function pickable(svg, n, idxAt, onPick, start){
+  let down = false, cur = start;
+  const go = (i, force) => { if (i == null || isNaN(i)) return; i = Math.max(0, Math.min(n - 1, i)); if (i === cur && !force) return; cur = i; onPick(i); };
+  const at = e => { const r = svg.getBoundingClientRect(); if (!r.width) return; go(idxAt((e.clientX - r.left) * svg.viewBox.baseVal.width / r.width)); };
+  svg.classList.add("pk"); svg.setAttribute("tabindex", "0");
+  svg.addEventListener("pointerdown", e => { down = true; at(e); });
+  svg.addEventListener("pointermove", e => { if (down) at(e); });
+  for (const t of ["pointerup", "pointercancel", "pointerleave"]) svg.addEventListener(t, () => { down = false; });
+  svg.addEventListener("keydown", e => { if (e.key === "ArrowLeft" || e.key === "ArrowRight"){ e.preventDefault(); go(cur + (e.key === "ArrowLeft" ? -1 : 1)); } });
+  go(start, true);
+}
+const tempoName = s => { s = String(s || "").trim().toLowerCase(); return s === "bleu" ? "Bleu" : s === "blanc" ? "Blanc" : s === "rouge" ? "Rouge" : null; };
+const chipHtml = c => c ? ` <span class="tempo" style="--c:${TCOL[c]}">${c}</span>` : "";
 function renderCurve(){
   const pts = (D.curve || []).map(([m, g, s]) => ({t: m * 60000, g, s, c: g + s})).filter(p => p.t >= Date.now() - 26 * 3600e3);
-  if (pts.length < 2){ $("cToday").innerHTML = '<p class="empty">Il faut au moins deux relevés récents pour tracer la courbe.</p>'; $("cTodayPick").innerHTML = ""; return; }
+  if (pts.length < 2){ $("cToday").innerHTML = '<p class="empty">Il faut au moins deux relevés récents pour tracer la courbe.</p>'; $("cTodayDt").hidden = true; return; }
   const W = 440, Hh = 170, pl = 38, pr = 4, pt = 10, pb = 22;
   const t0 = pts[0].t, t1 = pts[pts.length-1].t, span = Math.max(1, t1 - t0);
   const max = niceMax(Math.max(...pts.map(p => p.c), 100));
@@ -581,41 +568,39 @@ function renderCurve(){
     <path d="${line("c")}" fill="none" stroke="#4D8DFF" stroke-width="2.2" stroke-linejoin="round"/>
     <path d="${line("s")}" fill="none" stroke="#F5B83D" stroke-width="2.2" stroke-linejoin="round"/>
     <circle cx="${x(t1)}" cy="${y(pts[pts.length-1].c)}" r="4.5" fill="#5FD3A0"/>${lab}
-    <g class="hl" pointer-events="none"><line y1="${pt}" y2="${Hh-pb}" stroke="#A9C8FF" stroke-opacity=".7" stroke-dasharray="3 3"/><circle r="4" fill="#4D8DFF" stroke="#0B1526" stroke-width="1.5" class="hc"/><circle r="4" fill="#F5B83D" stroke="#0B1526" stroke-width="1.5" class="hs"/></g></svg>`;
-  const svg = $("cToday").querySelector("svg"), g = svg.querySelector(".hl");
-  let sel = -1;
-  const choose = i => {
-    i = Math.max(0, Math.min(pts.length - 1, i)); if (i === sel) return; sel = i;
-    const p = pts[i], X = x(p.t).toFixed(1);
-    g.querySelector("line").setAttribute("x1", X); g.querySelector("line").setAttribute("x2", X);
-    g.querySelector(".hc").setAttribute("cx", X); g.querySelector(".hc").setAttribute("cy", y(p.c).toFixed(1));
-    g.querySelector(".hs").setAttribute("cx", X); g.querySelector(".hs").setAttribute("cy", y(p.s).toFixed(1));
-    const d = new Date(p.t), same = d.toDateString() === new Date().toDateString();
-    pickTable($("cTodayPick"), [["Heure", `${hm(p.t)}<small>${same ? "aujourd'hui" : "hier"}</small>`], ["Conso maison", fW(p.c)], ["Solaire", fW(p.s)], ["Réseau", fW(p.g)]]);
-  };
-  // point le plus proche du doigt (relevés toutes les 15 min, parfois irréguliers)
-  scrub(svg, W, xs => { const t = t0 + (xs - pl) * span / (W - pl - pr); let b = 0; pts.forEach((p, i) => { if (Math.abs(p.t - t) < Math.abs(pts[b].t - t)) b = i; }); return b; }, choose);
-  choose(pts.length - 1);
+    <g id="cCur" pointer-events="none"><line y1="${pt}" y2="${Hh-pb}" stroke="#E6EEFB" stroke-opacity=".55" stroke-dasharray="3 3"/><circle r="4" fill="#4D8DFF" stroke="#0B1526" stroke-width="1.5"/><circle r="4" fill="#F5B83D" stroke="#0B1526" stroke-width="1.5"/></g></svg>`;
+  const svg = $("cToday").querySelector("svg"), g = svg.querySelector("#cCur"), [ln, cC, cS] = g.children;
+  const xs = pts.map(p => x(p.t)), today = new Date().toDateString();
+  pickable(svg, pts.length, vx => { let b = 0; xs.forEach((v, i) => { if (Math.abs(v - vx) < Math.abs(xs[b] - vx)) b = i; }); return b; }, i => {
+    const p = pts[i], X = xs[i].toFixed(1);
+    ln.setAttribute("x1", X); ln.setAttribute("x2", X);
+    cC.setAttribute("cx", X); cC.setAttribute("cy", y(p.c).toFixed(1)); cS.setAttribute("cx", X); cS.setAttribute("cy", y(p.s).toFixed(1));
+    const d = new Date(p.t), cov = p.c > 0 ? Math.min(1, p.s / p.c) : 0;
+    dtable($("cTodayDt"), [`Relevé de ${hm(p.t)}`, d.toDateString() === today ? "aujourd'hui" : d.toLocaleDateString("fr-FR", {weekday: "long", day: "numeric", month: "long"})], [
+      ["Conso maison", fW(p.c)], ["Production solaire", fW(p.s), "warn"], ["Tiré du réseau", fW(p.g)],
+      ["Part couverte par le solaire", p.s > 5 ? fr(cov * 100, 0) + " %" : "pas de soleil"]]);
+  }, pts.length - 1);
 }
 function renderToday(){
-  const s = D.now && D.now.since;
-  if (!s){
-    $("ajTitle").textContent = "Aujourd'hui"; tempoChip($("ajTempo"), null);
-    for (const id of ["ajCons", "ajCost", "ajBuy", "ajSol"]) $(id).textContent = "—";
-    $("ajConsN").textContent = "Pas encore de relevé."; for (const id of ["ajCostN", "ajBuyN", "ajSolN"]) $(id).textContent = " ";
-    return;
+  const N = D.now, s = N && N.since;
+  if (!s){ $("tBlock").hidden = true; return; }
+  $("tBlock").hidden = false;
+  $("tTitle").textContent = s.midnight ? "Aujourd'hui, depuis minuit" : `Depuis le ${dayName(s.from)}`;
+  tempoChip($("tTempo"), s.midnight ? tempoName(N.tempo) : null);
+  const sol = s.sol, cons = s.buy + (sol || 0), at = `jusqu'à ${hm(N.t)}`;
+  $("tCons").textContent = fK(cons);
+  $("tConsN").textContent = sol != null && cons > 0 ? `dont ${fr(sol / cons * 100, 0)} % de solaire` : at;
+  if (ok_(s.eur)){ $("tCost").textContent = fE(s.eur); $("tCostN").textContent = "calculé (Tarifs)"; }
+  else {
+    // Ancien script : pas de coût du jour, estimation au prix moyen d'hier
+    const y = D.yest, avg = y && y.kwh > 0 && ok_(y.eur) ? y.eur / y.kwh : null;
+    $("tCost").textContent = avg != null ? "≈ " + fE(s.buy * avg) : "—";
+    $("tCostN").textContent = avg != null ? "estimé (prix moyen d'hier)" : at;
   }
-  $("ajTitle").textContent = s.midnight ? `Aujourd'hui, ${dayName(s.from)}` : `Depuis le ${dayName(s.from)}`;
-  tempoChip($("ajTempo"), s.color);
-  const cons = s.buy + (s.sol || 0);
-  $("ajCons").textContent = fK(cons);
-  $("ajConsN").textContent = s.sol != null && cons > 0 ? `dont ${fr(s.sol / cons * 100, 0)} % de solaire` : " ";
-  $("ajCost").textContent = fE(s.eur);
-  $("ajCostN").textContent = `prix Tempo · à ${hm(D.now.t)}`;
-  $("ajBuy").textContent = fK(s.buy, 2);
-  $("ajBuyN").textContent = s.hc != null ? `HC ${fr(s.hc, 2)} · HP ${fr(s.hp, 2)}` : " ";
-  $("ajSol").textContent = fK(s.sol, 2);
-  $("ajSolN").textContent = s.gain != null ? `${fE(s.gain)} économisés` : " ";
+  $("tBuy").textContent = fK(s.buy, 2);
+  $("tBuyN").textContent = ok_(s.hc) ? `HC ${fr(s.hc, 2)} · HP ${fr(s.hp, 2)}` : at;
+  $("tSol").textContent = fK(sol, 2);
+  $("tSolN").textContent = ok_(s.gain) ? `${fE(s.gain)} économisés` : at;
 }
 function tempoChip(el, c){ if (!c){ el.hidden = true; return; } el.hidden = false; el.textContent = "Jour " + c; el.style.setProperty("--c", TCOL[c] || "var(--t-bleu)"); }
 function renderYest(){
@@ -713,48 +698,43 @@ function barChart(el, items, series, opts){
   const n = items.length, slot = (W - pl - pr) / n, bw = Math.max(2, slot * 0.7);
   const y = v => pt + (max - v) * (Hh - pt - pb) / max;
   const grid = [0, max/2, max].map(v => `<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" stroke="#26395C"/><text class="${opts.money ? "money" : ""}" x="${pl-6}" y="${y(v)+4}" font-size="10" text-anchor="end" fill="#93A6C6" font-family="Manrope, sans-serif">${fr(v, v < 10 && v % 1 ? 1 : 0)}${opts.unit || ""}</text>`).join("");
-  let bars = `<rect class="hl" x="${pl}" y="${pt - 4}" width="${slot.toFixed(1)}" height="${Hh - pt - pb + 8}" rx="4" fill="#A9C8FF" fill-opacity=".14" pointer-events="none"/>`;
+  let bars = "";
   items.forEach((it, i) => {
     const x0 = pl + i * slot + (slot - bw) / 2;
+    bars += `<g class="bg" data-g="${i}">`;
     if (opts.stack){ let acc = 0; series.forEach(se => { const v = it.v[se.key] || 0; if (v <= 0) return; bars += `<rect x="${x0.toFixed(1)}" y="${y(acc + v).toFixed(1)}" width="${bw.toFixed(1)}" height="${(y(acc) - y(acc + v)).toFixed(1)}" fill="${se.color}" rx="1.5"/>`; acc += v; }); }
     else { const w = bw / series.length; series.forEach((se, j) => { const v = it.v[se.key]; if (v == null) return; bars += `<rect x="${(x0 + j*w).toFixed(1)}" y="${y(v).toFixed(1)}" width="${(w - 1).toFixed(1)}" height="${(y(0) - y(v)).toFixed(1)}" fill="${se.color}" rx="1.5"/>`; }); }
     if (it.mark) bars += `<circle cx="${(x0 + bw/2).toFixed(1)}" cy="${Hh - pb + 6}" r="2.6" fill="${it.mark}"/>`;
+    bars += `</g>`;
   });
   const every = opts.every || 1;
   const labels = items.map((it, i) => ((i % every === 0 && n - 1 - i >= every / 2) || i === n - 1) ? `<text x="${(pl + i*slot + slot/2).toFixed(1)}" y="${Hh - 4}" font-size="10" text-anchor="middle" fill="#93A6C6" font-family="Manrope, sans-serif">${esc(it.label)}</text>` : "").join("");
-  el.innerHTML = `<svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="${esc(opts.aria || "")}" data-noswipe style="cursor:pointer">${grid}${bars}${labels}</svg>`;
-  const svg = el.querySelector("svg"), hl = svg.querySelector(".hl");
-  // Sélection : celle d'avant si l'élément existe encore (même clé), sinon la dernière valeur connue.
-  let sel = items.findIndex(it => it.key != null && it.key === el.dataset.key);
-  if (sel < 0){ sel = n - 1; if (opts.has) while (sel > 0 && !opts.has(items[sel])) sel--; }
-  let cur = -1;
-  const choose = i => {
-    i = Math.max(0, Math.min(n - 1, i)); if (i === cur) return; cur = i;
-    hl.setAttribute("x", (pl + i * slot).toFixed(1));
-    if (items[i].key != null) el.dataset.key = items[i].key;
-    opts.onPick(items[i], i);
-  };
-  scrub(svg, W, xs => Math.floor((xs - pl) / slot), choose);
-  choose(sel);
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="${esc(opts.aria || "")}" data-noswipe>${grid}${bars}${labels}</svg>`;
+  const svg = el.querySelector("svg"), gs = svg.querySelectorAll("g.bg");
+  const start = opts.sel != null && opts.sel < n ? opts.sel : n - 1; // par défaut : la dernière barre
+  pickable(svg, n, vx => Math.floor((vx - pl) / slot), i => { gs.forEach((g, j) => g.classList.toggle("on", j === i)); opts.onPick(items[i], i); }, start);
 }
 const TDOT = {Bleu:"#4D8DFF", Blanc:"#E6EEFB", Rouge:"#FF6B6B"};
+const money = v => `<span class="money">${v}</span>`;
 function renderDays(){
-  const items = H.days.map(d => ({key: d.k, label: shortDay(d.k), v: {b: d.kwh || 0, s: d.sol || 0}, mark: d.c ? TDOT[d.c] : null, d}));
-  const withTesla = H.days.some(d => d.tesla > 0);
-  barChart($("cDays"), items, [{key:"b", color:"#4D8DFF"}, {key:"s", color:"#F5B83D"}], {stack: true, every: 7, aria: "kWh achetés et produits par jour sur 30 jours", has: it => it.d.kwh != null,
-    onPick: it => { const d = it.d;
-      pickTable($("cDaysPick"), [["Jour", dayShort(d.k)], ["Acheté kWh", n1(d.kwh)], ["Solaire kWh", n1(d.sol)], ["Coût", ok_(d.eur) ? fE(d.eur) : NA, true], ["Tempo", tdot(d.c)]]
-        .concat(withTesla ? [["Tesla kWh", d.tesla ? fr(d.tesla, 0) : NA]] : []));
-    }});
+  const items = H.days.map(d => ({label: shortDay(d.k), v: {b: d.kwh || 0, s: d.sol || 0}, mark: d.c ? TDOT[d.c] : null, d}));
+  barChart($("cDays"), items, [{key:"b", color:"#4D8DFF"}, {key:"s", color:"#F5B83D"}], {stack: true, every: 7, aria: "kWh achetés et produits par jour sur 30 jours",
+    onPick: it => { const d = it.d, has = d.kwh != null;
+      dtable($("cDaysDt"), [dayName(d.k), has ? chipHtml(d.c) : "pas de données"], [
+        ["Acheté au réseau", has ? fK(d.kwh, 2) : "—"], ["Solaire produit", has ? fK(d.sol, 2) : "—", "warn"],
+        ["Conso maison", has ? fK(d.kwh + (d.sol || 0), 2) : "—"], ["Coût", has ? fE(d.eur) : "—", "money"],
+        ["Recharge Tesla", d.tesla ? fK(d.tesla, 0) : "—"]]); }});
 }
-let monthUnit = ls.get("monthUnit") || "eur";
+let monthUnit = ls.get("monthUnit") || "eur", monthSel = null;
 function renderMonths(){
-  const items = H.months.map(m => ({key: m.y + "-" + m.m, label: MOIS_C[m.m-1], v: {c: m.cur.n ? m.cur[monthUnit] : null, p: m.prev.n ? m.prev[monthUnit] : null}, m}));
-  barChart($("cMonths"), items, [{key:"c", color:"#4D8DFF"}, {key:"p", color:"#5A6E92"}], {stack: false, unit: monthUnit === "eur" ? " €" : "", money: monthUnit === "eur", aria: "Achats d'électricité par mois comparés à l'année précédente", has: it => it.m.cur.n > 0,
-    onPick: it => { const m = it.m, c = m.cur.n, p = m.prev.n;
-      pickTable($("cMonthsPick"), [["Mois", `${MOIS_C[m.m-1]} ${String(m.y).slice(2)}<small>${m.partial ? "en cours" : " "}</small>`],
-        ["kWh", c ? fr(m.cur.kwh, 0) : NA], ["Coût", c ? fE0(m.cur.eur) : NA, true], ["N−1 kWh", p ? fr(m.prev.kwh, 0) : NA], ["N−1 coût", p ? fE0(m.prev.eur) : NA, true]]);
-    }});
+  const items = H.months.map(m => ({label: MOIS_C[m.m-1], v: {c: m.cur.n ? m.cur[monthUnit] : null, p: m.prev.n ? m.prev[monthUnit] : null}, m}));
+  barChart($("cMonths"), items, [{key:"c", color:"#4D8DFF"}, {key:"p", color:"#5A6E92"}], {stack: false, sel: monthSel, unit: monthUnit === "eur" ? " €" : "", money: monthUnit === "eur", aria: "Achats d'électricité par mois comparés à l'année précédente",
+    onPick: (it, i) => { const m = it.m, c = m.cur, p = m.prev; monthSel = i === items.length - 1 ? null : i;
+      const pk = c.n && p.n ? pctOf(c.kwh, p.kwh) : null, pe = c.n && p.n ? pctOf(c.eur, p.eur) : null;
+      dtable($("cMonthsDt"), [`${MOIS[m.m-1][0].toUpperCase() + MOIS[m.m-1].slice(1)} ${m.y}`, m.partial ? `en cours (1er–${+addDays(H.today, -1).slice(8)})` : ""], [
+        ["Acheté cette année", c.n ? fK(c.kwh, 0) : "pas de données"], ["Coût cette année", c.n ? fE0(c.eur) : "—", "money"],
+        [`Un an plus tôt${m.partial ? " (mois entier)" : ""}`, p.n ? `${fK(p.kwh, 0)} · ${money(fE0(p.eur))}` : "pas de données"],
+        ["Écart sur un an", pk == null ? "—" : `<span class="${pk > 0 ? "down" : "up"}">${fPct(pk)} kWh</span> · <span class="money ${pe > 0 ? "down" : "up"}">${fPct(pe)} €</span>`]]); }});
 }
 document.querySelectorAll("#segM button").forEach(b => {
   b.setAttribute("aria-pressed", b.dataset.v === monthUnit ? "true" : "false");
@@ -776,64 +756,107 @@ function renderDevices(){
   const v = $("devMonth").value, ha = v === "ha";
   const src = ha ? H.dev.ha : (H.dev.suivi || [])[+v];
   if (!src){ $("devRows").innerHTML = '<p class="empty">Rien pour ce mois.</p>'; $("devNote").textContent = ""; return; }
-  $("devRows").innerHTML = src.list.map(l => `<div class="line${l.tot ? " tot" : ""}${l.key ? " tap" : ""}"${l.key ? ` role="button" tabindex="0" data-dev="${esc(l.key)}" data-name="${esc(l.name)}" aria-label="${esc(l.name)} : voir la courbe"` : ""}><span class="nm">${esc(l.name)}${l.key ? '<span class="go" aria-hidden="true">›</span>' : ""}${l.sub ? `<small>${esc(l.sub)}</small>` : ""}${l.share != null && !l.tot ? `<div class="share"><i style="width:${(Math.min(1, l.share)*100).toFixed(1)}%"></i></div>` : ""}</span><span class="a">${l.kwh != null ? fK(l.kwh) : ""}${l.share != null && !l.tot ? `<br><span class="sub">${fr(l.share*100, 0)} %</span>` : ""}</span><span class="b money">${fE(l.eur)}</span></div>`).join("") || '<p class="empty">Rien pour ce mois.</p>';
-  $("devNote").textContent = (ha ? `Du 1er au ${src.to} : index des prises Home Assistant (onglet Jours). Coûts ≈ kWh × prix moyen du mois (${fr(src.avg, 4)} €/kWh).` : "Onglet « Suivi mensuel » du fichier Electricité, rempli le 1er de chaque mois.")
-    + (src.list.some(l => l.key) ? " Touche un appareil (›) pour voir sa courbe." : "");
+  $("devRows").innerHTML = src.list.map((l, i) => `<div class="line dev${l.tot ? " tot" : ""}" role="button" tabindex="0" aria-expanded="false" data-i="${i}"><span class="nm">${esc(l.name)}<span class="chev" aria-hidden="true">›</span>${l.sub ? `<small>${esc(l.sub)}</small>` : ""}${l.share != null && !l.tot ? `<div class="share"><i style="width:${(Math.min(1, l.share)*100).toFixed(1)}%"></i></div>` : ""}</span><span class="a">${l.kwh != null ? fK(l.kwh) : ""}${l.share != null && !l.tot ? `<br><span class="sub">${fr(l.share*100, 0)} %</span>` : ""}</span><span class="b money">${fE(l.eur)}</span></div>`).join("") || '<p class="empty">Rien pour ce mois.</p>';
+  $("devNote").textContent = ha ? `Du 1er au ${src.to} : index des prises Home Assistant (onglet Jours). Coûts ≈ kWh × prix moyen du mois (${fr(src.avg, 4)} €/kWh).` : "Onglet « Suivi mensuel » du fichier Electricité, rempli le 1er de chaque mois.";
+  const again = devOpen ? src.list.findIndex(l => devSame(l.name, devOpen.name)) : -1;
+  if (again >= 0) openDev(src.list[again], $("devRows").querySelector(`[data-i="${again}"]`));
 }
 $("devMonth").addEventListener("change", renderDevices);
-$("devRows").addEventListener("click", e => { const r = e.target.closest("[data-dev]"); if (r) openDev(r.dataset.dev, r.dataset.name); });
-$("devRows").addEventListener("keydown", e => { if (e.key !== "Enter" && e.key !== " ") return; const r = e.target.closest("[data-dev]"); if (r){ e.preventDefault(); openDev(r.dataset.dev, r.dataset.name); } });
-
-// ---------- Fiche appareil : kWh par jour (onglet Jours) ou par mois (Suivi mensuel) ----------
-let DV = null, devKey = null, devMode = ls.get("devMode") === "month" ? "month" : "day", devLoading = null;
-function devSeg(){ document.querySelectorAll("#segD button").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === devMode ? "true" : "false")); }
-document.querySelectorAll("#segD button").forEach(b => b.onclick = () => { devMode = b.dataset.v; ls.set("devMode", devMode); devSeg(); $("dsChart").dataset.key = ""; renderDev(); });
-async function loadDev(force){
-  if (devLoading) return devLoading;
-  devLoading = api("dev", force ? 1 : null).then(d => { DV = d; return d; }).finally(() => { devLoading = null; });
-  return devLoading;
+// ---------- Courbe d'un appareil (par jour : onglet Jours via devDays ; par mois : Suivi mensuel + jours Home Assistant) ----------
+const devNorm = s => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\(.*?\)/g, " ").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+const devSame = (a, b) => { a = devNorm(a); b = devNorm(b); return !!a && !!b && (a === b || a.startsWith(b + " ") || b.startsWith(a + " ")); };
+const DEV_KEYS = [["PAC_kWh","Pompe à chaleur"],["Ballon_kWh","Ballon eau chaude"],["Deshumidificateur_kWh","Déshumidificateur"],["Pompe_piscine_kWh","Pompe piscine"],["Volet_piscine_kWh","Volet piscine"],["Lit_chauffant_kWh","Lit chauffant"],["Ventilateur_garage_kWh","Ventilateur garage"],["Compresseur_kWh","Compresseur"],["Imprimante_3D_kWh","Imprimante 3D"],["Aquarium_kWh","Aquarium"],["Repeteur_kWh","Prise répéteur"],["Jardin_devant_kWh","Lumière jardin devant"],
+  ["Tesla","Tesla (recharge)"],["other","Non identifié"],["total","Conso maison"],["buy","Électricité achetée au réseau"],["sol","Production solaire"]];
+function devKey(l){
+  if (l.key) return l.key;
+  const k = (H.devKeys || []).concat(DEV_KEYS).find(([, n]) => devSame(n, l.name));
+  return k ? k[0] : null;
 }
-async function openDev(key, name){
-  devKey = key; devSeg();
-  $("dsTitle").textContent = name || "Appareil";
-  $("dsChart").dataset.key = "";
-  $("devSheet").hidden = false; document.body.style.overflow = "hidden";
-  if (!(history.state && history.state.sheet)) history.pushState({sheet: 1}, "");
-  if (DV){ renderDev(); return; }
-  $("dsChart").innerHTML = '<p class="empty">Chargement…</p>'; $("dsPick").innerHTML = ""; $("dsNote").textContent = "";
-  try{ await loadDev(false); if (!$("devSheet").hidden) renderDev(); }
-  catch(e){ $("dsChart").innerHTML = `<p class="empty">${esc(e.message)}</p>`; }
+function devDayVal(key, e){
+  if (e.kwh == null) return null;
+  const dv = e.dev || {}, tot = e.kwh + (e.sol || 0);
+  if (key === "total") return tot;
+  if (key === "buy") return e.kwh;
+  if (key === "sol") return e.sol;
+  if (key === "Tesla") return e.tesla || 0;
+  if (key === "other"){ const known = Object.values(dv).reduce((s, v) => s + (v || 0), 0) + (e.tesla || 0); return Math.max(0, tot - known); }
+  return dv[key] == null ? null : dv[key];
 }
-function hideDev(){ $("devSheet").hidden = true; document.body.style.overflow = ""; }
-function closeDev(){ if (history.state && history.state.sheet) history.back(); else hideDev(); }
-window.addEventListener("popstate", () => { if (!$("devSheet").hidden) hideDev(); });
-$("dsClose").onclick = closeDev;
-$("devSheet").addEventListener("click", e => { if (e.target === $("devSheet")) closeDev(); });
-document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("devSheet").hidden) closeDev(); });
-function renderDev(){
-  const s = DV && DV.s && DV.s[devKey], el = $("dsChart"), sol = devKey === "Solaire_kWh";
-  const color = sol ? "#F5B83D" : devKey === "tesla" ? "#5FD3A0" : "#4D8DFF";
-  if (!s){ el.innerHTML = '<p class="empty">Pas de données pour cet appareil.</p>'; $("dsPick").innerHTML = ""; $("dsNote").textContent = ""; return; }
-  if (devMode === "day"){
-    const i0 = s.k.findIndex(v => v != null);
-    if (i0 < 0){ el.innerHTML = '<p class="empty">Pas encore de mesure jour par jour pour cet appareil.</p>'; $("dsPick").innerHTML = ""; $("dsNote").textContent = ""; return; }
-    const items = DV.days.slice(i0).map((k, j) => { const i = i0 + j; return {key: k, label: shortDay(k), v: {a: s.k[i] || 0}, mark: DV.c[i] ? TDOT[DV.c[i]] : null, d: {k, kwh: s.k[i], eur: s.e[i], c: DV.c[i]}}; });
-    barChart(el, items, [{key: "a", color}], {stack: true, every: items.length > 40 ? 14 : 7, unit: "", aria: "kWh par jour", has: it => it.d.kwh != null,
-      onPick: it => { const d = it.d; pickTable($("dsPick"), [["Jour", dayShort(d.k)], ["kWh", n1(d.kwh, 2)], [sol ? "Valeur" : "Coût ≈", ok_(d.eur) ? fE(d.eur) : NA, true], ["Tempo", tdot(d.c)]]); }});
-    const vals = items.map(it => it.d.kwh).filter(v => v != null), tot = vals.reduce((a, b) => a + b, 0);
-    $("dsNote").innerHTML = `${vals.length} jour${vals.length > 1 ? "s" : ""} mesuré${vals.length > 1 ? "s" : ""} : <b>${fK(tot)}</b> au total, <b>${fK(vals.length ? tot / vals.length : null, 2)}</b> par jour en moyenne. `
-      + (sol ? "Valeur = production × prix heure pleine du jour." : devKey === "tesla" ? "Recharges notées dans le fichier Electricité ; coût ≈ kWh × prix moyen payé ce jour-là." : "Index de la prise dans l'onglet Jours ; coût ≈ kWh × prix moyen payé ce jour-là.");
-  } else {
-    const ms = DV.months || [], i0 = ms.findIndex(m => m.v[devKey]);
-    if (i0 < 0){ el.innerHTML = '<p class="empty">Pas encore de mois mesuré pour cet appareil.</p>'; $("dsPick").innerHTML = ""; $("dsNote").textContent = ""; return; }
-    const items = ms.slice(i0).map(m => { const v = m.v[devKey], mo = +m.id.slice(5, 7); return {key: m.id, label: MOIS_C[mo - 1], v: {a: v ? v[0] || 0 : 0}, d: {m, mo, kwh: v ? v[0] : null, eur: v ? v[1] : null}}; });
-    barChart(el, items, [{key: "a", color}], {stack: true, unit: "", aria: "kWh par mois", has: it => it.d.kwh != null,
-      onPick: it => { const d = it.d, m = d.m;
-        pickTable($("dsPick"), [["Mois", `${MOIS_C[d.mo - 1]} ${m.id.slice(2, 4)}<small>${m.partial ? `1er–${m.to}, en cours` : m.est ? "Home Assistant" : "Suivi mensuel"}</small>`],
-          ["kWh", n1(d.kwh, d.kwh != null && d.kwh < 10 ? 2 : 1)], [sol ? "Valeur" : m.est ? "Coût ≈" : "Coût", ok_(d.eur) ? fE(d.eur) : NA, true]]); }});
-    $("dsNote").textContent = "Mois terminés : onglet « Suivi mensuel » (fichier Electricité). Mois sans ligne dans le Suivi : somme des jours de l'onglet Jours, coût estimé.";
+function devSeries(l){
+  const key = devKey(l), days = [], months = {};
+  if (key && Array.isArray(H.devDays)) H.devDays.forEach(e => {
+    const v = devDayVal(key, e); if (v == null) return;
+    const avg = e.kwh > 0 && ok_(e.eur) ? e.eur / e.kwh : null;
+    const eur = key === "buy" ? e.eur : avg != null ? v * avg : null;
+    days.push({k: e.k, kwh: v, eur, c: e.c, tot: e.kwh + (e.sol || 0)});
+    const mk = e.k.slice(0, 7), m = months[mk] = months[mk] || {mk, kwh: 0, eur: 0, n: 0, src: "Home Assistant (onglet Jours)", est: key !== "buy"};
+    m.kwh += v; m.eur += eur || 0; m.n++;
+  });
+  // Suivi mensuel (fichier Electricité) : prioritaire pour les mois qu'il couvre
+  (H.dev.suivi || []).forEach(s => {
+    const mm = String(s.name).toLowerCase().match(/^(\S+)\s+(\d{4})$/), mi = mm ? MOIS.indexOf(mm[1]) : -1;
+    if (mi < 0) return;
+    const mk = `${mm[2]}-${pad2(mi + 1)}`, find = re => s.list.find(x => re.test(devNorm(x.name)));
+    let kwh = null, eur = null;
+    if (key === "total"){ const b = find(/^electricite achetee/), so = find(/^production solaire/); if (b && b.kwh != null){ kwh = b.kwh + ((so && so.kwh) || 0); eur = b.eur; } }
+    else { const x = s.list.find(x => devSame(x.name, l.name)) || (key ? s.list.find(x => devKey(x) === key) : null); if (x){ kwh = x.kwh; eur = x.eur; } }
+    if (kwh == null && eur == null) return;
+    months[mk] = {mk, kwh, eur, n: new Date(Date.UTC(+mm[2], mi + 1, 0)).getUTCDate(), src: "Suivi mensuel (fichier Electricité)", est: false};
+  });
+  // Ancien script (sans devDays) : le mois en cours vient de la liste Home Assistant
+  if (H.dev.ha && !days.length){
+    const x = H.dev.ha.list.find(x => devSame(x.name, l.name) || (key && devKey(x) === key));
+    const mk = H.today.slice(0, 7);
+    if (x && x.kwh != null && !months[mk]) months[mk] = {mk, kwh: x.kwh, eur: x.eur, n: H.dev.ha.to, src: "Home Assistant (mois en cours)", est: true};
   }
+  const curMk = addDays(H.today, -1).slice(0, 7);
+  const ml = Object.values(months).sort((a, b) => a.mk < b.mk ? -1 : 1).map(m => Object.assign(m, {partial: m.mk === curMk && m.src.indexOf("Suivi") < 0}));
+  return {key, days: days.slice(-60), months: ml};
 }
+let devOpen = null, devView = ls.get("devView") || "jour";
+function closeDev(){ document.querySelectorAll("#devRows .devpanel").forEach(p => p.remove()); document.querySelectorAll("#devRows .line.dev").forEach(x => x.setAttribute("aria-expanded", "false")); }
+function openDev(l, row){
+  closeDev(); devOpen = l; if (!row) return; row.setAttribute("aria-expanded", "true");
+  const S = devSeries(l), hasD = S.days.length > 0, hasM = S.months.length > 0;
+  const panel = document.createElement("div"); panel.className = "devpanel";
+  row.after(panel);
+  if (!hasD && !hasM){ panel.innerHTML = `<p class="empty">Pas encore d'historique pour « ${esc(l.name)} ».</p>`; return; }
+  let view = devView === "mois" || !hasD ? (hasM ? "mois" : "jour") : "jour";
+  const draw = () => {
+    panel.innerHTML = `<div class="curvehead"><h3>${esc(l.name)}</h3><div class="seg" role="group" aria-label="Période">`
+      + `<button type="button" data-v="jour" aria-pressed="${view === "jour"}"${hasD ? "" : " disabled"}>Par jour</button><button type="button" data-v="mois" aria-pressed="${view === "mois"}"${hasM ? "" : " disabled"}>Par mois</button></div></div>`
+      + `<div class="dc"></div><div class="dt" aria-live="polite" hidden></div><p class="foot dn"></p>`;
+    panel.querySelectorAll(".seg button").forEach(b => b.onclick = () => { if (b.disabled) return; view = devView = b.dataset.v; ls.set("devView", view); draw(); });
+    const dc = panel.querySelector(".dc"), dt = panel.querySelector(".dt"), dn = panel.querySelector(".dn");
+    if (view === "jour"){
+      const items = S.days.map(d => ({label: shortDay(d.k), v: {a: d.kwh}, mark: d.c ? TDOT[d.c] : null, d}));
+      barChart(dc, items, [{key: "a", color: "#4D8DFF"}], {stack: true, every: Math.max(1, Math.ceil(items.length / 5)), aria: `Conso par jour : ${l.name}`,
+        onPick: it => { const d = it.d;
+          dtable(dt, [dayName(d.k), chipHtml(d.c)], [["Consommation", fK(d.kwh, 2)], ["Coût estimé", ok_(d.eur) ? "≈ " + fE(d.eur) : "—", "money"],
+            ["Part de la conso maison", d.tot > 0 && S.key !== "total" ? fr(d.kwh / d.tot * 100, 0) + " %" : "—"]]); }});
+      dn.textContent = `${S.days.length} dernier${S.days.length > 1 ? "s" : ""} jour${S.days.length > 1 ? "s" : ""} de l'onglet Jours (Home Assistant). Coût ≈ kWh × prix moyen du jour.`;
+    } else {
+      const useK = S.months.some(m => m.kwh != null);
+      const items = S.months.map(m => ({label: MOIS_C[+m.mk.slice(5) - 1], v: {a: useK ? m.kwh : m.eur}, m}));
+      barChart(dc, items, [{key: "a", color: "#4D8DFF"}], {stack: true, unit: useK ? "" : " €", money: !useK, aria: `Conso par mois : ${l.name}`,
+        onPick: it => { const m = it.m, mi = +m.mk.slice(5) - 1;
+          dtable(dt, [`${MOIS[mi][0].toUpperCase() + MOIS[mi].slice(1)} ${m.mk.slice(0, 4)}`, m.partial ? `en cours (${m.n} j)` : ""], [
+            ["Consommation", m.kwh != null ? fK(m.kwh, 1) : "—"], [m.est ? "Coût estimé" : "Coût", ok_(m.eur) ? (m.est ? "≈ " : "") + fE(m.eur) : "—", "money"],
+            ["Moyenne par jour", m.kwh != null && m.n ? fK(m.kwh / m.n, 2) : "—"], ["Source", `<small>${esc(m.src)}</small>`]]); }});
+      dn.textContent = hasD ? "Suivi mensuel du fichier Electricité quand il existe, sinon somme des jours Home Assistant." : "Suivi mensuel du fichier Electricité et mois en cours. La courbe jour par jour arrivera avec la mise à jour du script.";
+    }
+  };
+  draw();
+}
+$("devRows").addEventListener("click", e => {
+  if (e.target.closest(".devpanel")) return;
+  const row = e.target.closest(".line.dev"); if (!row) return;
+  const v = $("devMonth").value, src = v === "ha" ? H.dev.ha : (H.dev.suivi || [])[+v], l = src && src.list[+row.dataset.i];
+  if (!l) return;
+  if (row.getAttribute("aria-expanded") === "true"){ closeDev(); devOpen = null; return; }
+  openDev(l, row);
+});
+$("devRows").addEventListener("keydown", e => { if ((e.key === "Enter" || e.key === " ") && e.target.matches(".line.dev")){ e.preventDefault(); e.target.click(); } });
 function renderHist(h){
   H = h;
   for (const f of [renderDays, renderMonths, renderSeasons, renderDevSelect, renderDevices]){ try{ f(); }catch(e){ console.error(e); } }
@@ -852,7 +875,7 @@ async function loadHist(force){
   try{ const h = await api("hist", force ? 1 : null); renderHist(h); ls.set("lastHist", JSON.stringify(h)); }
   catch(e){ if (tab === "hist") note(e.message, true); }
 }
-$("refresh").onclick = () => { load(true, $("refresh")); if (tab === "hist" || H) loadHist(true); DV = null; if (!$("devSheet").hidden) loadDev(true).then(renderDev).catch(e => note(e.message, true)); };
+$("refresh").onclick = () => { load(true, $("refresh")); if (tab === "hist" || H) loadHist(true); };
 
 // ---------- Onglets ----------
 let tab = "accueil";
@@ -870,7 +893,7 @@ document.querySelectorAll("#tabs button").forEach(b => b.onclick = () => showTab
 (() => {
   let sx = 0, sy = 0, st = 0, ok = false;
   const blocked = el => { for (let e = el; e && e !== document.body; e = e.parentElement){
-    if (e.matches && e.matches("svg, input, textarea, select, .tbl, .lock, .sheet, [data-noswipe]")) return true;
+    if (e.matches && e.matches("svg, input, textarea, select, .tbl, .lock, [data-noswipe]")) return true;
     const ox = getComputedStyle(e).overflowX; if ((ox === "auto" || ox === "scroll") && e.scrollWidth > e.clientWidth + 2) return true; } return false; };
   document.addEventListener("touchstart", e => { ok = e.touches.length === 1 && $("lock").hidden && !blocked(e.target); if (!ok) return; sx = e.touches[0].clientX; sy = e.touches[0].clientY; st = Date.now(); }, {passive: true});
   document.addEventListener("touchend", e => {
