@@ -45,7 +45,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .up{color:var(--mint)} .down{color:var(--coral)} .warn{color:var(--sun)}
 
 /* Onglets */
-.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:4;display:grid;grid-template-columns:repeat(var(--n,5),minmax(0,1fr));gap:4px;padding:4px;margin:-8px 0 -6px;border-radius:16px;background:rgba(19,33,58,.88);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line)}
+.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:4;display:grid;grid-template-columns:repeat(var(--n,4),minmax(0,1fr));gap:4px;padding:4px;margin:-8px 0 -6px;border-radius:16px;background:rgba(19,33,58,.88);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line)}
 .tabs button{min-width:0;border:0;border-radius:12px;padding:10px 0;background:transparent;color:var(--mist);font-weight:600;font-size:.72rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background 180ms ease,color 180ms ease}
 .tabs button[aria-selected="true"]{background:linear-gradient(135deg,#2F6FE8,#6FA3FF);color:#06101F}
 .view{display:flex;flex-direction:column;gap:24px}
@@ -177,13 +177,11 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
 .btn:disabled{opacity:.55}
 .btn .lbl{display:inline-block;transition:filter 200ms ease,opacity 200ms ease}
 .btn.busy .lbl{filter:blur(2px);opacity:.6}
-#eye{display:grid;place-items:center;padding:0}
-#eye svg{width:22px;height:22px}
+#gear{display:grid;place-items:center;padding:0}
+#gear svg{width:22px;height:22px}
+#gear[aria-pressed="true"]{background:var(--blue);color:#06101F}
+.tbl td small,.tbl th small{display:block;color:var(--mist);font-size:.7rem;font-weight:500;text-transform:none;letter-spacing:0}
 @media (hover:hover) and (pointer:fine){.btn:hover{background:var(--navy-2)}.btn.main:hover{background:#6FA3FF}}
-
-/* Mode discret : euros floutés */
-.private .money{filter:blur(9px);user-select:none}
-.private svg .money{visibility:hidden}
 
 /* Verrou (identique à Crypto de poche) */
 .lock{position:fixed;inset:0;z-index:20;background:radial-gradient(90% 55% at 50% 0%,#17346A 0%,rgba(11,21,38,0) 65%) no-repeat,var(--night);transition:opacity 220ms var(--ease-out),transform 220ms var(--ease-out);display:grid;place-items:center;
@@ -248,7 +246,6 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
     <button type="button" role="tab" data-t="hist" aria-selected="false">Historique</button>
     <button type="button" role="tab" data-t="facture" aria-selected="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-1px;margin-right:2px"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg>Facture</button>
     <button type="button" role="tab" data-t="saisies" aria-selected="false" id="tabSaisies">Saisies</button>
-    <button type="button" role="tab" data-t="reglages" aria-selected="false">Réglages</button>
   </nav>
 
   <div class="note" id="note" hidden role="status"></div>
@@ -361,6 +358,14 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
       <p class="foot" id="devNote"></p>
     </section>
 
+    <section class="curve" id="solSec" hidden>
+      <h2>Ce que le solaire t'a fait économiser</h2>
+      <div id="solTot"></div>
+      <div class="chart" id="cSol"></div>
+      <div class="pick" id="cSolPick" aria-live="polite"></div>
+      <p class="foot" id="solNote"></p>
+    </section>
+
     <section class="block">
       <h2>Saisons (12 juillet → 11 juillet)</h2>
       <div class="tbl" id="seasons"><p class="empty">Chargement…</p></div>
@@ -402,6 +407,13 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
       <h2>Tarifs en vigueur</h2>
       <div class="tbl" id="tarNow"><p class="empty">Chargement…</p></div>
       <p class="foot" id="aboNow"></p>
+    </section>
+
+    <section class="block" id="poeleSec" hidden>
+      <h2>Poêle contre PAC</h2>
+      <p id="poeleConc" style="margin:6px 0;font-size:1.02rem"></p>
+      <div class="tbl" id="poeleTbl"></div>
+      <p class="foot" id="poeleNote"></p>
     </section>
   </div>
 
@@ -479,14 +491,22 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
   <!-- RÉGLAGES -->
   <div class="view" id="vReglages" hidden>
     <section class="block">
-      <h2>Réglages</h2>
+      <div class="curvehead"><h2>Réglages</h2><button type="button" class="pill" id="setBack">‹ Retour</button></div>
       <div>
-        <div class="opt"><span>Masquer les montants à l'ouverture<small>Les euros restent floutés jusqu'à ce que tu touches l'œil.</small></span><button type="button" class="switch" id="optPrivate" role="switch" aria-checked="false" aria-label="Masquer les montants à l'ouverture"></button></div>
         <div class="opt" id="optPushRow" hidden><span>Alerte si Home Assistant n'écrit plus<small id="pushInfo">Une notification sur ce téléphone si aucun relevé n'arrive pendant 3 heures.</small></span><button type="button" class="pill main" id="pushBtn">Activer</button></div>
         <div class="opt" id="optBioRow" hidden><span>Empreinte<small id="bioInfo"></small></span><button type="button" class="pill" id="bioToggle"></button></div>
         <div class="opt"><span>Verrouiller maintenant<small>Le code est redemandé tout de suite.</small></span><button type="button" class="pill" id="optLock">Verrouiller</button></div>
         <div class="opt"><span>Accès<small id="roleInfo">—</small></span><span></span></div>
       </div>
+    </section>
+
+    <section class="block">
+      <h2>Installation solaire</h2>
+      <div class="grid2">
+        <label class="f">Coût de l'installation (€)<input id="instCost" type="text" inputmode="decimal" placeholder="ex. 9500"></label>
+        <label class="f">Date d'installation<input id="instDate" type="date"></label>
+      </div>
+      <p class="foot">Sert à calculer le remboursement dans Historique. Gardé sur ce téléphone seulement.</p>
     </section>
 
     <section class="block">
@@ -499,7 +519,7 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
 
 <nav class="bar" aria-label="Actions">
   <div class="in">
-    <button class="btn" id="eye" type="button" aria-label="Masquer les montants"></button>
+    <button class="btn" id="gear" type="button" aria-label="Réglages" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
     <button class="btn main" id="refresh" type="button"><span class="lbl">Actualiser</span></button>
   </div>
 </nav>
@@ -772,8 +792,9 @@ function renderAbout(){
 }
 function applyRole(){
   const ro = role !== "owner";
-  $("tabSaisies").hidden = ro; $("tabs").style.setProperty("--n", ro ? 4 : 5);
+  $("tabSaisies").hidden = ro; $("tabs").style.setProperty("--n", ro ? 3 : 4);
   if (ro && tab === "saisies") showTab("accueil");
+  if (ro && prevTab === "saisies") prevTab = "accueil";
   $("optPushRow").hidden = ro;
   $("roleInfo").textContent = ro ? "Lecture seule : tous les chiffres, aucune saisie." : "Complet : lecture et saisies.";
 }
@@ -781,7 +802,7 @@ function render(d){
   D = d;
   if (d.role && d.role !== role){ role = d.role; ls.set("role", role); }
   applyRole();
-  const parts = [renderNow, renderCurve, renderYest, renderToday, renderMonth, renderCmp, renderPel, renderAbout, renderFact, renderFacture].concat(role === "owner" ? [renderTarifs, renderLog] : []);
+  const parts = [renderNow, renderCurve, renderYest, renderToday, renderMonth, renderCmp, renderPel, renderAbout, renderFact, renderFacture, renderPoele].concat(role === "owner" ? [renderTarifs, renderLog] : []);
   for (const f of parts){ try{ f(); }catch(e){ console.error(e); } }
   if (d.errs && d.errs.length) note("Une partie des chiffres manque : " + d.errs.join(" ; "), true);
 }
@@ -939,6 +960,74 @@ function renderDev(){
 function renderHist(h){
   H = h;
   for (const f of [renderDays, renderMonths, renderSeasons, renderFact, renderDevSelect, renderDevices]){ try{ f(); }catch(e){ console.error(e); } }
+  ensureDV(false);
+}
+
+// ---------- Solaire : économies cumulées / Poêle contre PAC (données « dev » + « hist », rien de plus côté serveur) ----------
+const mLabel = id => `${MOIS_C[+id.slice(5, 7) - 1]} ${id.slice(2, 4)}`;
+function ensureDV(force){
+  if (!KEY() || (DV && !force)) { renderExtras(); return; }
+  loadDev(!!force).then(renderExtras).catch(() => { renderExtras(); });
+}
+function renderExtras(){ for (const f of [renderSolar, renderPoele]){ try{ f(); }catch(e){ console.error(e); } } }
+function solarMonths(){
+  return ((DV && DV.months) || []).map(m => ({m, v: m.v && m.v.Solaire_kWh})).filter(x => x.v && ok_(x.v[1])).map(x => ({id: x.m.id, partial: !!x.m.partial, kwh: x.v[0] || 0, eur: x.v[1]}));
+}
+function renderSolar(){
+  const sec = $("solSec"), ms = solarMonths();
+  if (!ms.length){ sec.hidden = true; return; }
+  sec.hidden = false;
+  const tot = a => a.reduce((t, x) => t + x.eur, 0), totK = a => a.reduce((t, x) => t + x.kwh, 0);
+  const todayK = (DV && DV.today) || (H && H.today) || todayKey();
+  const y0 = +todayK.slice(0, 4) - (+todayK.slice(5, 7) >= 7 ? 0 : 1), seasonMs = ms.filter(x => x.id >= y0 + "-07");
+  const all = tot(ms), rows = [
+    line(`Depuis le début<small>${mLabel(ms[0].id)} → ${mLabel(ms[ms.length - 1].id)} · ${fK(totK(ms), 0)} produits</small>`, " ", fE0(all), {tot: true, bM: true}),
+    line(`Cette saison<small>depuis juillet ${y0} · ${fK(totK(seasonMs), 0)}</small>`, " ", seasonMs.length ? fE0(tot(seasonMs)) : "—", {bM: true})];
+  const cost = dec(ls.get("instCost")), idate = ls.get("instDate") || "";
+  let pay = "";
+  if (cost > 0 && /^\d{4}-\d{2}/.test(idate)){
+    const since = ms.filter(x => x.id >= idate.slice(0, 7)), saved = tot(since), pct = saved / cost * 100;
+    rows.push(line(`Remboursé à<small>${fE0(saved)} sur ${fE0(cost)}</small>`, " ", fr(pct, 0) + " %", {tot: true}));
+    const rec = ms.filter(x => !x.partial).slice(-12), avg = rec.length ? tot(rec) / rec.length : 0;
+    if (saved >= cost) pay = "Installation remboursée.";
+    else if (avg > 0){
+      const n = Math.ceil((cost - saved) / avg), t = new Date(); t.setDate(1); t.setMonth(t.getMonth() + n);
+      rows.push(line(`Remboursement estimé<small>au rythme des ${rec.length} derniers mois (${fE0(avg)}/mois)</small>`, " ", `vers ${pad2(t.getMonth() + 1)}/${t.getFullYear()}`));
+    }
+    if (since.length && ms[0].id > idate.slice(0, 7)) pay = "Les chiffres ne commencent qu'en " + mLabel(ms[0].id) + " : le remboursement est sous-estimé.";
+  } else pay = "Renseigne le coût et la date d'installation dans Réglages (roue crantée) pour voir le remboursement.";
+  $("solTot").innerHTML = rows.join("");
+  let cum = 0; const cums = ms.map(x => cum += x.eur);
+  barChart($("cSol"), ms.map((x, i) => ({key: x.id, label: MOIS_C[+x.id.slice(5, 7) - 1], v: {a: Math.max(0, x.eur)}, x, cum: cums[i]})), [{key: "a", color: "#F5B83D"}],
+    {stack: true, money: true, unit: " €", every: ms.length > 14 ? 3 : 1, aria: "Économies du solaire par mois", has: it => !!it.x,
+     onPick: it => pickTable($("cSolPick"), [["Mois", `${mLabel(it.x.id)}<small>${it.x.partial ? "en cours" : " "}</small>`], ["kWh", fr(it.x.kwh, 0)], ["Économie", fE0(it.x.eur), true], ["Cumul", fE0(it.cum), true]])});
+  $("solNote").textContent = "Économie = kWh produits × prix du kWh heure pleine du jour (jour par jour quand le fichier le donne). " + pay;
+}
+function suiviGran(){
+  const out = {}, rx = /^([a-zéû]+)\s+(\d{4})$/;
+  for (const m of ((H && H.dev && H.dev.suivi) || [])){
+    const a = String(m.name).trim().toLowerCase(), mm = a.match(rx), d = a.match(/^(\d{4})-(\d{2})/);
+    const id = d ? d[1] + "-" + d[2] : mm && MOIS.indexOf(mm[1]) >= 0 ? mm[2] + "-" + pad2(MOIS.indexOf(mm[1]) + 1) : null;
+    const g = (m.list || []).find(l => !l.tot && /granul/i.test(l.name) && ok_(l.eur));
+    if (id && g) out[id] = g.eur;
+  }
+  return out;
+}
+function renderPoele(){
+  const sec = $("poeleSec"), prix = D && D.pel && D.pel.prix, gran = suiviGran();
+  const pac = ((DV && DV.months) || []).filter(m => m.v && m.v.PAC_kWh && m.v.PAC_kWh[0] >= 20 && ok_(m.v.PAC_kWh[1]));
+  if (!pac.length || !(prix > 0)){ sec.hidden = true; return; }
+  const COP = 3, KWH_SAC = 15 * 4.6, rows = pac.slice().reverse().slice(0, 12).map(m => {
+    const [ek, ee] = m.v.PAC_kWh, ch = ek * COP, g = gran[m.id], sacs = ok_(g) ? g / prix : null, chp = sacs != null ? sacs * KWH_SAC : null;
+    return {id: m.id, partial: !!m.partial, pacE: ee, pacC: ch, pacP: ee / ch, gE: g, gC: chp, gP: chp > 0 ? g / chp : null};
+  });
+  sec.hidden = false;
+  const c = x => ok_(x) ? fr(x * 100, 1) + " c" : NA;
+  $("poeleTbl").innerHTML = `<table><thead><tr><th>Mois</th><th>PAC<small>coût</small></th><th>PAC<small>chaleur</small></th><th>Poêle<small>coût</small></th><th>Poêle<small>chaleur</small></th></tr></thead><tbody>${rows.map(r =>
+    `<tr><td>${mLabel(r.id)}${r.partial ? "<small>en cours</small>" : ""}</td><td class="money">${fE0(r.pacE)}<small>${c(r.pacP)}/kWh</small></td><td>${fr(r.pacC, 0)} kWh</td><td class="money">${r.gP != null ? fE0(r.gE) + `<small>${c(r.gP)}/kWh</small>` : NA}</td><td>${r.gC > 0 ? fr(r.gC, 0) + " kWh" : NA}</td></tr>`).join("")}</tbody></table>`;
+  const last = rows.find(r => r.gP != null && !r.partial) || rows.find(r => r.gP != null);
+  $("poeleConc").innerHTML = last ? `En ${MOIS[+last.id.slice(5, 7) - 1]} ${last.id.slice(0, 4)}, le kWh de chaleur coûte <b>${fr(last.pacP * 100, 1)} c</b> avec la PAC contre <b>${fr(last.gP * 100, 1)} c</b> avec le poêle${last.gP < last.pacP ? " : le poêle est moins cher." : last.gP > last.pacP ? " : la PAC est moins chère." : "."}` : "Pas de mois avec des granulés dans le suivi : seule la PAC est chiffrée.";
+  $("poeleNote").textContent = `Hypothèses : PAC = kWh électriques × COP estimé de ${COP} ; poêle = sacs (granulés dépensés ÷ prix du sac actuel, ${fE(prix)}) × 15 kg × 4,6 kWh/kg = ${fr(KWH_SAC, 0)} kWh par sac. Les kWh de la PAC viennent des données Viessmann, parfois manquantes : un mois incomplet fait paraître la PAC trop bon marché.`;
 }
 
 // ---------- Chargement ----------
@@ -967,20 +1056,24 @@ async function loadHist(force){
   try{ const h = await api("hist", force ? 1 : null); renderHist(h); ls.set("lastHist", JSON.stringify(h)); }
   catch(e){ if (tab === "hist") note(e.message, true); }
 }
-$("refresh").onclick = () => { load(true, $("refresh")); if (tab === "hist" || H) loadHist(true); DV = null; if (!$("devSheet").hidden) loadDev(true).then(renderDev).catch(e => note(e.message, true)); };
+$("refresh").onclick = () => { load(true, $("refresh")); if (tab === "hist" || H) loadHist(true); DV = null; if (!$("devSheet").hidden) loadDev(true).then(renderDev).catch(e => note(e.message, true)); else if (H) ensureDV(true); };
 
 // ---------- Onglets ----------
 let tab = "accueil";
 const VIEWS = {accueil:"vAccueil", hist:"vHist", facture:"vFacture", saisies:"vSaisies", reglages:"vReglages"};
-const order = () => Object.keys(VIEWS).filter(k => !(k === "saisies" && role !== "owner"));
+const order = () => Object.keys(VIEWS).filter(k => k !== "reglages" && !(k === "saisies" && role !== "owner"));
+let prevTab = "accueil";
 function showTab(t, dir){
-  if (t === tab || !order().includes(t)) return; tab = t;
+  if (t === tab || !(order().includes(t) || t === "reglages")) return; if (tab !== "reglages") prevTab = tab; tab = t;
   document.querySelectorAll("#tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.t === t ? "true" : "false"));
+  $("gear").setAttribute("aria-pressed", t === "reglages" ? "true" : "false");
   for (const k in VIEWS){ const v = $(VIEWS[k]); v.hidden = k !== t; if (k === t && !reduceMotion){ v.classList.remove("fade", "fromR", "fromL"); void v.offsetWidth; v.classList.add("fade"); if (dir) v.classList.add(dir > 0 ? "fromR" : "fromL"); } }
   window.scrollTo(0, 0);
   if (t === "hist" && !H && KEY()) loadHist(false);
 }
 document.querySelectorAll("#tabs button").forEach(b => b.onclick = () => showTab(b.dataset.t));
+$("gear").onclick = () => showTab(tab === "reglages" ? (order().includes(prevTab) ? prevTab : "accueil") : "reglages");
+$("setBack").onclick = () => $("gear").click();
 // Glisser le doigt à gauche ou à droite pour changer d'onglet (pas sur les graphiques ni les champs)
 (() => {
   let sx = 0, sy = 0, st = 0, ok = false;
@@ -992,7 +1085,7 @@ document.querySelectorAll("#tabs button").forEach(b => b.onclick = () => showTab
     if (!ok) return; ok = false;
     const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
     if (Date.now() - st > 700 || Math.abs(dx) < 60 || Math.abs(dx) < 1.8 * Math.abs(dy)) return;
-    const o = order(), i = o.indexOf(tab) + (dx < 0 ? 1 : -1);
+    const o = order(), j = o.indexOf(tab); if (j < 0) return; const i = j + (dx < 0 ? 1 : -1);
     if (i >= 0 && i < o.length) showTab(o[i], dx < 0 ? 1 : -1);
   }, {passive: true});
 })();
@@ -1061,19 +1154,7 @@ $("fTar").addEventListener("submit", async e => {
   finally{ tarBusy = false; $("rGo").disabled = false; }
 });
 
-// ---------- Mode discret ----------
-const EYE_OPEN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
-const EYE_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.6 5.1A10.8 10.8 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-2.6 3.5M6.6 6.6C3.8 8.3 2 12 2 12s3.6 7 10 7a9.7 9.7 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/><line x1="3" y1="3" x2="21" y2="21"/></svg>';
-function setPrivate(on){
-  document.body.classList.toggle("private", on);
-  $("eye").innerHTML = on ? EYE_OFF : EYE_OPEN;
-  $("eye").setAttribute("aria-label", on ? "Afficher les montants" : "Masquer les montants");
-}
-$("eye").onclick = () => setPrivate(!document.body.classList.contains("private"));
-const privStart = ls.get("private") === "1";
-$("optPrivate").setAttribute("aria-checked", privStart ? "true" : "false");
-$("optPrivate").onclick = () => { const on = $("optPrivate").getAttribute("aria-checked") !== "true"; $("optPrivate").setAttribute("aria-checked", on ? "true" : "false"); ls.set("private", on ? "1" : "0"); setPrivate(on); };
-setPrivate(privStart);
+ls.del("private"); // ancienne préférence « masquer les montants », supprimée
 
 // ---------- Alerte push (Adrien) : le script envoie un « réveil », le service worker lit le message ----------
 function idb(){ return new Promise((res, rej) => { const r = indexedDB.open("cp-owner", 1); r.onupgradeneeded = () => r.result.createObjectStore("kv"); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
