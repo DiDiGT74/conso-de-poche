@@ -45,10 +45,11 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .up{color:var(--mint)} .down{color:var(--coral)} .warn{color:var(--sun)}
 
 /* Onglets */
-.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:4;display:grid;grid-template-columns:repeat(var(--n,4),minmax(0,1fr));gap:4px;padding:4px;margin:-8px 0 -6px;border-radius:16px;background:rgba(19,33,58,.88);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line)}
+.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:4;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;padding:4px;margin:-8px 0 -6px;border-radius:16px;background:rgba(19,33,58,.88);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line)}
 .tabs button{min-width:0;border:0;border-radius:12px;padding:10px 0;background:transparent;color:var(--mist);font-weight:600;font-size:.72rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background 180ms ease,color 180ms ease}
 .tabs button[aria-selected="true"]{background:linear-gradient(135deg,#2F6FE8,#6FA3FF);color:#06101F}
-.tabs button{padding-left:2px;padding-right:2px}
+.tabs button{padding-left:1px;padding-right:1px;font-size:.68rem}
+.tabs button svg{margin-right:1px!important}
 .sunb h2::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--sun)}
 .gauge{position:relative;height:30px;border-radius:15px;background:var(--navy-2);overflow:hidden;margin-bottom:6px}
 .gauge i{position:absolute;inset:0 auto 0 0;width:0;border-radius:15px;background:linear-gradient(90deg,#E39A1B,#F5B83D);transition:width 500ms var(--ease-out)}
@@ -184,16 +185,17 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
 /* Barre d'actions */
 .bar{position:fixed;left:0;right:0;bottom:0;z-index:5;background:rgba(11,21,38,.9);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line);
   padding:10px max(18px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(18px,env(safe-area-inset-left,0px))}
-.bar .in{max-width:480px;margin:0 auto;display:grid;grid-template-columns:52px minmax(0,1fr);gap:10px}
+.bar .in{max-width:480px;margin:0 auto;display:grid;grid-template-columns:52px 52px minmax(0,1fr);gap:10px}
+.bar .in.ro{grid-template-columns:52px minmax(0,1fr)}
 .btn{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:0;border-radius:16px;padding:14px 10px;background:var(--navy);font-weight:600;font-size:.92rem;transition:transform 140ms var(--ease-out),background 140ms ease}
 .btn:active{transform:scale(.97)}
 .btn.main{background:var(--blue);color:#06101F}
 .btn:disabled{opacity:.55}
 .btn .lbl{display:inline-block;transition:filter 200ms ease,opacity 200ms ease}
 .btn.busy .lbl{filter:blur(2px);opacity:.6}
-#gear{display:grid;place-items:center;padding:0}
-#gear svg{width:22px;height:22px}
-#gear[aria-pressed="true"]{background:var(--blue);color:#06101F}
+#gear,#saisBtn{display:grid;place-items:center;padding:0}
+#gear svg,#saisBtn svg{width:22px;height:22px}
+#gear[aria-pressed="true"],#saisBtn[aria-pressed="true"]{background:var(--blue);color:#06101F}
 .tbl td small,.tbl th small{display:block;color:var(--mist);font-size:.7rem;font-weight:500;text-transform:none;letter-spacing:0}
 @media (hover:hover) and (pointer:fine){.btn:hover{background:var(--navy-2)}.btn.main:hover{background:#6FA3FF}}
 
@@ -259,8 +261,8 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
     <button type="button" role="tab" data-t="accueil" aria-selected="true">Accueil</button>
     <button type="button" role="tab" data-t="hist" aria-selected="false">Historique</button>
     <button type="button" role="tab" data-t="solaire" aria-selected="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>Solaire</button>
+    <button type="button" role="tab" data-t="poele" aria-selected="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-1px;margin-right:2px"><path d="M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2 1-3.2 2-4.2.2 1.2.8 2 1.7 2.4C10.3 8.5 11 5.5 12 3z"/></svg>Poêle</button>
     <button type="button" role="tab" data-t="facture" aria-selected="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-1px;margin-right:2px"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg>Facture</button>
-    <button type="button" role="tab" data-t="saisies" aria-selected="false" id="tabSaisies">Saisies</button>
   </nav>
 
   <div class="note" id="note" hidden role="status"></div>
@@ -340,10 +342,6 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
       <p class="foot">Électricité achetée au réseau, mêmes jours un an plus tôt. En vert : moins que l'an dernier.</p>
     </section>
 
-    <section class="block">
-      <h2>Granulés</h2>
-      <div id="pelRows"><p class="empty">En attente des chiffres.</p></div>
-    </section>
   </div>
 
   <!-- HISTORIQUE -->
@@ -448,6 +446,31 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
       <p class="foot" id="aboNow"></p>
     </section>
 
+  </div>
+
+  <!-- POÊLE -->
+  <div class="view" id="vPoele" hidden>
+    <section class="block" id="pelFormSec">
+      <h2>Sacs de granulés</h2>
+      <form id="fPel" novalidate>
+        <div class="grid2">
+          <label class="f">Date<input id="pDate" type="date" required></label>
+          <label class="f">Quoi<select id="pType"><option value="Ouverture sacs">Sacs ouverts</option><option value="Achat sacs">Sacs achetés</option></select></label>
+          <label class="f">Nombre de sacs<input id="pNb" type="text" inputmode="numeric" value="1" required></label>
+          <label class="f">Prix du sac (€)<input id="pPrix" type="text" inputmode="decimal" placeholder="ex. 6,70"></label>
+        </div>
+        <label class="f">Détail (facultatif)<input id="pDet" type="text" placeholder="ex. palette Brico, 15 kg" maxlength="200"></label>
+        <button type="submit" class="pill main" id="pGo">Enregistrer</button>
+        <div class="msg" id="pMsg" hidden></div>
+        <p class="hint">Ajouté en bas de l'onglet « Saisies » de « HA données ». Home Assistant le reprend dans l'heure (compteur de sacs, prix du sac).</p>
+      </form>
+    </section>
+
+    <section class="block" id="granSec">
+      <h2>Granulés</h2>
+      <div id="pelRows"><p class="empty">En attente des chiffres.</p></div>
+    </section>
+
     <section class="curve" id="poeleJSec" hidden>
       <h2>Poêle</h2>
       <div id="poeleJ"></div>
@@ -481,7 +504,7 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
   <!-- SAISIES (Adrien seulement) -->
   <div class="view" id="vSaisies" hidden>
     <section class="block">
-      <h2>Recharge Tesla</h2>
+      <div class="curvehead"><h2>Recharge Tesla</h2><button type="button" class="pill" id="saisBack">‹ Retour</button></div>
       <form id="fTesla" novalidate>
         <div class="grid2">
           <label class="f">Jour de la recharge<input id="tDate" type="date" required></label>
@@ -491,22 +514,6 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
         <div class="confirm" id="tConfirm" hidden><div id="tConfirmText"></div><div class="acts"><button type="button" class="pill main" id="tYes">Ajouter</button><button type="button" class="pill" id="tNo">Annuler</button></div></div>
         <div class="msg" id="tMsg" hidden></div>
         <p class="hint">Écrit dans « Electricité », colonne N (kWh voiture) de la ligne du jour, onglet de la saison.</p>
-      </form>
-    </section>
-
-    <section class="block">
-      <h2>Sacs de granulés</h2>
-      <form id="fPel" novalidate>
-        <div class="grid2">
-          <label class="f">Date<input id="pDate" type="date" required></label>
-          <label class="f">Quoi<select id="pType"><option value="Ouverture sacs">Sacs ouverts</option><option value="Achat sacs">Sacs achetés</option></select></label>
-          <label class="f">Nombre de sacs<input id="pNb" type="text" inputmode="numeric" value="1" required></label>
-          <label class="f">Prix du sac (€)<input id="pPrix" type="text" inputmode="decimal" placeholder="ex. 6,70"></label>
-        </div>
-        <label class="f">Détail (facultatif)<input id="pDet" type="text" placeholder="ex. palette Brico, 15 kg" maxlength="200"></label>
-        <button type="submit" class="pill main" id="pGo">Enregistrer</button>
-        <div class="msg" id="pMsg" hidden></div>
-        <p class="hint">Ajouté en bas de l'onglet « Saisies » de « HA données ». Home Assistant le reprend dans l'heure (compteur de sacs, prix du sac).</p>
       </form>
     </section>
 
@@ -568,8 +575,9 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
 </main>
 
 <nav class="bar" aria-label="Actions">
-  <div class="in">
+  <div class="in" id="barIn">
     <button class="btn" id="gear" type="button" aria-label="Réglages" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+    <button class="btn" id="saisBtn" type="button" aria-label="Saisies" aria-pressed="false" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>
     <button class="btn main" id="refresh" type="button"><span class="lbl">Actualiser</span></button>
   </div>
 </nav>
@@ -819,7 +827,7 @@ function renderPel(){
     line("Sacs ouverts cette saison<small>compteur Home Assistant</small>", p.sacs != null ? `${fr(p.sacs, 0)} sac${p.sacs > 1 ? "s" : ""}` : "—", p.sacs != null && p.prix != null ? fE(p.sacs * p.prix) : "—", {bM: true}),
     line("Prix du sac", " ", fE(p.prix), {bM: true})
   ];
-  if (p.lines) rows.push(line("Sacs achetés cette saison<small>onglet Saisies</small>", `${fr(p.nAch, 0)} sacs`, fE(p.eAch), {bM: true}));
+  if (p.lines) rows.push(line("Sacs achetés cette saison<small>saisies granulés</small>", `${fr(p.nAch, 0)} sacs`, fE(p.eAch), {bM: true}));
   $("pelRows").innerHTML = rows.join("");
 }
 function renderTarifs(){
@@ -842,7 +850,7 @@ function renderAbout(){
 }
 function applyRole(){
   const ro = role !== "owner";
-  $("tabSaisies").hidden = ro; $("tabs").style.setProperty("--n", ro ? 4 : 5);
+  $("saisBtn").hidden = ro; $("barIn").classList.toggle("ro", ro); $("pelFormSec").hidden = ro;
   if (ro && tab === "saisies") showTab("accueil");
   if (ro && prevTab === "saisies") prevTab = "accueil";
   $("optPushRow").hidden = ro;
@@ -1183,13 +1191,13 @@ $("refresh").onclick = () => { load(true, $("refresh")); if (tab === "hist" || H
 
 // ---------- Onglets ----------
 let tab = "accueil";
-const VIEWS = {accueil:"vAccueil", hist:"vHist", solaire:"vSolaire", facture:"vFacture", saisies:"vSaisies", reglages:"vReglages"};
-const order = () => Object.keys(VIEWS).filter(k => k !== "reglages" && !(k === "saisies" && role !== "owner"));
+const VIEWS = {accueil:"vAccueil", hist:"vHist", solaire:"vSolaire", poele:"vPoele", facture:"vFacture", saisies:"vSaisies", reglages:"vReglages"};
+const order = () => Object.keys(VIEWS).filter(k => k !== "reglages" && k !== "saisies");
 let prevTab = "accueil";
 function showTab(t, dir){
-  if (t === tab || !(order().includes(t) || t === "reglages")) return; if (tab !== "reglages") prevTab = tab; tab = t;
+  if (t === tab || !(order().includes(t) || t === "reglages" || (t === "saisies" && role === "owner"))) return; if (tab !== "reglages" && tab !== "saisies") prevTab = tab; tab = t;
   document.querySelectorAll("#tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.t === t ? "true" : "false"));
-  $("gear").setAttribute("aria-pressed", t === "reglages" ? "true" : "false");
+  $("gear").setAttribute("aria-pressed", t === "reglages" ? "true" : "false"); $("saisBtn").setAttribute("aria-pressed", t === "saisies" ? "true" : "false");
   for (const k in VIEWS){ const v = $(VIEWS[k]); v.hidden = k !== t; if (k === t && !reduceMotion){ v.classList.remove("fade", "fromR", "fromL"); void v.offsetWidth; v.classList.add("fade"); if (dir) v.classList.add(dir > 0 ? "fromR" : "fromL"); } }
   window.scrollTo(0, 0);
   if (t === "hist" && !H && KEY()) loadHist(false);
@@ -1197,6 +1205,8 @@ function showTab(t, dir){
 document.querySelectorAll("#tabs button").forEach(b => b.onclick = () => showTab(b.dataset.t));
 $("gear").onclick = () => showTab(tab === "reglages" ? (order().includes(prevTab) ? prevTab : "accueil") : "reglages");
 $("setBack").onclick = () => $("gear").click();
+$("saisBtn").onclick = () => showTab(tab === "saisies" ? (order().includes(prevTab) ? prevTab : "accueil") : "saisies");
+$("saisBack").onclick = () => $("saisBtn").click();
 // Glisser le doigt à gauche ou à droite pour changer d'onglet (pas sur les graphiques ni les champs)
 (() => {
   let sx = 0, sy = 0, st = 0, ok = false;
