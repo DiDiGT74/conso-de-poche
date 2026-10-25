@@ -669,7 +669,7 @@ function renderMonth(){
     $("mNote").innerHTML = `Projection <b class="money ${diff > 0 ? "down" : "up"}">${diff > 0 ? "+" : diff < 0 ? "−" : ""}${fE0(Math.abs(diff))}</b> par rapport à l'échéancier (trait blanc).`;
   } else { $("mMeter").hidden = true; $("mNote").textContent = ""; }
   const rg = $("mReg"), r = D.reg;
-  if (r && r.est != null){ rg.hidden = false; rg.innerHTML = `Estimation de la régularisation de juillet ${r.to.slice(0,4)} : <b class="money ${r.est > 0 ? "down" : "up"}">${r.est > 0 ? "+" : r.est < 0 ? "−" : ""}${fE0(Math.abs(r.est))}</b> ${r.est > 0 ? "à payer" : "à rembourser"} (estimation, voir Historique).`; }
+  if (r && r.est != null){ rg.hidden = false; const mens = D.month && D.month.ech ? D.month.ech.eur : null; const y = r.to.slice(0,4); const half = r.est / 2; rg.innerHTML = r.est > 0 ? `<b>Août et septembre ${y}</b> (estimation) : <b class="money ${mens && half > mens * 1.15 ? "down" : "up"}">2 × ${fE0(half)}</b>${mens ? ` <small>(prélèvement habituel ${fE0(mens)})</small>` : ""}` : `<b>Août ${y}</b> (estimation) : remboursement d'environ <b class="money up">${fE0(Math.abs(r.est))}</b>, rien à payer en août et septembre`; }
   else rg.hidden = true;
 }
 function renderCmp(){
