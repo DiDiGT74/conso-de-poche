@@ -365,7 +365,7 @@ function getData_(force) {
   const out = {
     at: Date.now(), today: S.today,
     now: nowBlock_(S), curve: S.releves.slice(-110).map(r => [Math.round(r.t.getTime() / 60000), num_(r.Reseau_VA) || 0, num_(r.Solaire_W) || 0]),
-    poele: poele_(S), yest: yesterday_(S), month: month_(S), reg: reg_(S), abo: aboAt_(S, S.today),
+    sol: sol_(S), poele: poele_(S), yest: yesterday_(S), month: month_(S), reg: reg_(S), abo: aboAt_(S, S.today),
     echeancier: S.echeancier.map(e => ({ from: e.from, eur: e.eur, type: e.type, rem: e.rem })), factures: S.factures, cmp: compare_(S), pel: pellets_(S),
     tarifs: S.tarifs.map(t => ({ from: t.from, p: TAR.map(k => t.p[k]), by: t.by, abo: t.abo })),
     tarifNow: (S.tarifs.filter(t => t.from <= S.today).pop() || {}).from || null,
@@ -430,6 +430,23 @@ function poele_(S) {
     return { k: k, h: h == null ? null : r2_(h), r: ranges, n: rs.length };
   };
   return { today: day(S.today, true), yest: day(addDays_(S.today, -1), false) };
+}
+/* Onglet Solaire : production et gain par jour depuis l'installation, prévision de demain et météo (colonnes des Releves repérées par leur en-tête) */
+function sol_(S) {
+  const end = addDays_(S.today, -1), days = [];
+  for (let k = '2026-08-31'; k <= end; k = addDays_(k, 1)) { const d = day_(S, k); if (d && d.sol != null) days.push([k, r2_(d.sol), r2_(d.gain), d.color]); }
+  const L = S.last, out = { days: days, tom: null, meteo: null };
+  if (L) {
+    const lastOf = h => { for (let i = S.releves.length - 1; i >= 0; i--) { const v = S.releves[i][h]; if (v !== undefined && v !== '' && v !== null) return { t: S.releves[i].t, v: v }; } return null; };
+    const f = lastOf('Solaire_prevu_demain_kWh'), kwh = f ? num_(f.v) : null;
+    if (kwh != null && L.t - f.t < 36 * 3600000) {
+      const tk = addDays_(Utilities.formatDate(f.t, TZ, 'yyyy-MM-dd'), 1), p = priceAt_(S, tk), tc = lastOf('Tempo_demain'), c = tc ? tempoName_(tc.v) : null;
+      out.tom = { k: tk, kwh: r2_(kwh), c: c, p: p ? r2_(p[{ Bleu: 'HPJB', Blanc: 'HPJW', Rouge: 'HPJR' }[c || 'Bleu']]) : null };
+    }
+    const m = lastOf('Meteo');
+    if (m && String(m.v).trim()) out.meteo = { v: String(m.v).trim().toLowerCase(), k: Utilities.formatDate(m.t, TZ, 'yyyy-MM-dd') };
+  }
+  return out;
 }
 function tempoName_(s) {
   s = String(s || '').toLowerCase();

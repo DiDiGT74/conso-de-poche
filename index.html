@@ -48,6 +48,13 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:4;display:grid;grid-template-columns:repeat(var(--n,4),minmax(0,1fr));gap:4px;padding:4px;margin:-8px 0 -6px;border-radius:16px;background:rgba(19,33,58,.88);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line)}
 .tabs button{min-width:0;border:0;border-radius:12px;padding:10px 0;background:transparent;color:var(--mist);font-weight:600;font-size:.72rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background 180ms ease,color 180ms ease}
 .tabs button[aria-selected="true"]{background:linear-gradient(135deg,#2F6FE8,#6FA3FF);color:#06101F}
+.tabs button{padding-left:2px;padding-right:2px}
+.sunb h2::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--sun)}
+.gauge{position:relative;height:30px;border-radius:15px;background:var(--navy-2);overflow:hidden;margin-bottom:6px}
+.gauge i{position:absolute;inset:0 auto 0 0;width:0;border-radius:15px;background:linear-gradient(90deg,#E39A1B,#F5B83D);transition:width 500ms var(--ease-out)}
+.gauge b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:.9rem;color:var(--ice);text-shadow:0 1px 2px rgba(0,0,0,.5)}
+.tile .wx{display:flex;align-items:center;gap:8px;color:var(--sun-soft)}
+.tile .wx svg{flex:none}
 .view{display:flex;flex-direction:column;gap:24px}
 .view.fade{animation:viewIn 260ms var(--ease-out)}
 .view.fade.fromR{animation:viewInR 240ms var(--ease-out)} .view.fade.fromL{animation:viewInL 240ms var(--ease-out)}
@@ -251,6 +258,7 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
   <nav class="tabs" id="tabs" role="tablist" aria-label="Volets">
     <button type="button" role="tab" data-t="accueil" aria-selected="true">Accueil</button>
     <button type="button" role="tab" data-t="hist" aria-selected="false">Historique</button>
+    <button type="button" role="tab" data-t="solaire" aria-selected="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>Solaire</button>
     <button type="button" role="tab" data-t="facture" aria-selected="false"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-1px;margin-right:2px"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg>Facture</button>
     <button type="button" role="tab" data-t="saisies" aria-selected="false" id="tabSaisies">Saisies</button>
   </nav>
@@ -365,18 +373,42 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
       <p class="foot" id="devNote"></p>
     </section>
 
-    <section class="curve" id="solSec" hidden>
-      <h2>Ce que le solaire t'a fait économiser</h2>
-      <div id="solTot"></div>
-      <div class="chart" id="cSol"></div>
-      <div class="pick" id="cSolPick" aria-live="polite"></div>
-      <p class="foot" id="solNote"></p>
-    </section>
-
     <section class="block">
       <h2>Saisons (12 juillet → 11 juillet)</h2>
       <div class="tbl" id="seasons"><p class="empty">Chargement…</p></div>
       <p class="foot" id="seasonsNote"></p>
+    </section>
+  </div>
+
+  <!-- SOLAIRE -->
+  <div class="view" id="vSolaire" hidden>
+    <p class="empty" id="solEmpty" hidden>Les chiffres du solaire ne sont pas encore disponibles (le script Google doit être mis à jour).</p>
+    <section class="block sunb" id="solSave" hidden>
+      <h2>Économisé</h2>
+      <div class="tiles" id="solTiles"></div>
+      <p class="foot" id="solSaveNote"></p>
+    </section>
+    <section class="block sunb" id="solPay" hidden>
+      <h2>Rentabilité</h2>
+      <div class="gauge" role="img" id="solGauge"><i id="solGaugeBar"></i><b id="solGaugeTxt"></b></div>
+      <div id="solPayRows"></div>
+      <p class="foot" id="solPayNote"></p>
+    </section>
+    <section class="block sunb" id="solTom" hidden>
+      <h2>Demain et météo</h2>
+      <div class="tiles" id="solTomTiles"></div>
+      <p class="foot" id="solTomNote"></p>
+    </section>
+    <section class="curve" id="solDaySec" hidden>
+      <h2>Ce que chaque jour a rapporté</h2>
+      <div class="chart" id="cSolD"></div>
+      <div class="pick" id="cSolDPick" aria-live="polite"></div>
+    </section>
+    <section class="curve" id="solMonSec" hidden>
+      <h2>Par mois</h2>
+      <div class="chart" id="cSolM"></div>
+      <div class="pick" id="cSolMPick" aria-live="polite"></div>
+      <p class="foot">Valeur d'un kWh solaire = prix du kWh qu'il évite : heure pleine de la couleur Tempo du jour.</p>
     </section>
   </div>
 
@@ -524,7 +556,7 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
         <label class="f">Coût de l'installation (€)<input id="instCost" type="text" inputmode="decimal" placeholder="1050 par défaut"></label>
         <label class="f">Date d'installation<input id="instDate" type="date"></label>
       </div>
-      <p class="foot">Sert à calculer le remboursement dans Historique. Gardé sur ce téléphone seulement.</p>
+      <p class="foot">Sert à calculer le remboursement dans l'onglet Solaire. Gardé sur ce téléphone seulement.</p>
     </section>
 
     <section class="block">
@@ -810,7 +842,7 @@ function renderAbout(){
 }
 function applyRole(){
   const ro = role !== "owner";
-  $("tabSaisies").hidden = ro; $("tabs").style.setProperty("--n", ro ? 3 : 4);
+  $("tabSaisies").hidden = ro; $("tabs").style.setProperty("--n", ro ? 4 : 5);
   if (ro && tab === "saisies") showTab("accueil");
   if (ro && prevTab === "saisies") prevTab = "accueil";
   $("optPushRow").hidden = ro;
@@ -820,7 +852,7 @@ function render(d){
   D = d;
   if (d.role && d.role !== role){ role = d.role; ls.set("role", role); }
   applyRole();
-  const parts = [renderNow, renderCurve, renderYest, renderToday, renderMonth, renderCmp, renderPel, renderAbout, renderFact, renderFacture, renderPoele, renderPoeleJ].concat(role === "owner" ? [renderTarifs, renderLog] : []);
+  const parts = [renderNow, renderCurve, renderYest, renderToday, renderMonth, renderCmp, renderPel, renderAbout, renderFact, renderFacture, renderSolar, renderPoele, renderPoeleJ].concat(role === "owner" ? [renderTarifs, renderLog] : []);
   for (const f of parts){ try{ f(); }catch(e){ console.error(e); } }
   if (d.errs && d.errs.length) note("Une partie des chiffres manque : " + d.errs.join(" ; "), true);
 }
@@ -987,40 +1019,89 @@ function ensureDV(force){
   if (!KEY() || (DV && !force)) { renderExtras(); return; }
   loadDev(!!force).then(renderExtras).catch(() => { renderExtras(); });
 }
-function renderExtras(){ for (const f of [renderSolar, renderPoele]){ try{ f(); }catch(e){ console.error(e); } } }
-function solarMonths(){
-  return ((DV && DV.months) || []).map(m => ({m, v: m.v && m.v.Solaire_kWh})).filter(x => x.v && ok_(x.v[1])).map(x => ({id: x.m.id, partial: !!x.m.partial, kwh: x.v[0] || 0, eur: x.v[1]}));
-}
+function renderExtras(){ for (const f of [renderPoele]){ try{ f(); }catch(e){ console.error(e); } } }
 const SOL_COST = 1050, SOL_DATE = "2026-08-31";
+const SOL_F = [.35, .55, .85, 1.1, 1.25, 1.35, 1.4, 1.25, .95, .65, .4, .3], SOL_FM = SOL_F.reduce((a, b) => a + b, 0) / 12;
+const WX = {sunny:["Ensoleillé","<circle cx='12' cy='12' r='4'/><path d='M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4'/>"],
+  "clear-night":["Nuit claire","<path d='M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z'/>"],
+  partlycloudy:["Éclaircies","<circle cx='8' cy='8' r='3'/><path d='M8 2v1M2 8h1M3.8 3.8l.7.7M12.2 3.8l-.7.7'/><path d='M8 20h9a4 4 0 0 0 .5-8 5.5 5.5 0 0 0-10.4 1.5A3.4 3.4 0 0 0 8 20z'/>"],
+  cloudy:["Nuageux","<path d='M7 19h10a4.5 4.5 0 0 0 .6-9A6 6 0 0 0 6 11.5 3.8 3.8 0 0 0 7 19z'/>"],
+  rainy:["Pluie","<path d='M7 15h10a4 4 0 0 0 .6-8A6 6 0 0 0 6 8.5 3.3 3.3 0 0 0 7 15z'/><path d='M8 18l-1 3M12 18l-1 3M16 18l-1 3'/>"],
+  snowy:["Neige","<path d='M7 14h10a4 4 0 0 0 .6-8A6 6 0 0 0 6 7.5 3.3 3.3 0 0 0 7 14z'/><path d='M8 18h.01M12 18h.01M16 18h.01M10 21h.01M14 21h.01'/>"],
+  lightning:["Orage","<path d='M7 14h10a4 4 0 0 0 .6-8A6 6 0 0 0 6 7.5 3.3 3.3 0 0 0 7 14z'/><path d='M12 14l-2 4h3l-2 4'/>"],
+  fog:["Brouillard","<path d='M4 8h16M3 12h18M5 16h14M8 20h8'/>"],
+  windy:["Venteux","<path d='M3 9h11a3 3 0 1 0-3-3M3 15h14a3 3 0 1 1-3 3M3 12h8'/>"]};
+WX.pouring = ["Forte pluie", WX.rainy[1]]; WX["lightning-rainy"] = ["Orage", WX.lightning[1]]; WX.hail = ["Grêle", WX.snowy[1]]; WX.exceptional = ["Exceptionnel", WX.cloudy[1]];
+WX["partlycloudy-night"] = ["Éclaircies", WX.partlycloudy[1]]; WX["windy-variant"] = WX.windy;
+const wxIcon = (v, sz=28) => { const w = WX[v] || [v, WX.cloudy[1]]; return [w[0], `<svg viewBox="0 0 24 24" width="${sz}" height="${sz}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${w[1]}</svg>`]; };
+const sunTile = (l, v, n, cls) => `<div class="tile"><span class="l">${l}</span><span class="v${cls ? " " + cls : ""}">${v}</span><span class="n">${n || "&nbsp;"}</span></div>`;
+function solarProject(days, rest){
+  // rythme des 30 derniers jours ramené à un mois « moyen », puis jour par jour avec la saisonnalité de Haute-Savoie
+  const rec = days.slice(-30); if (rec.length < 5) return null;
+  const fac = k => SOL_F[+k.slice(5, 7) - 1] / SOL_FM;
+  const eur = rec.reduce((a, d) => a + (d.eur || 0), 0), f = rec.reduce((a, d) => a + fac(d.k), 0);
+  if (eur <= 0 || f <= 0) return null;
+  const base = eur / f; let k = addDays(days[days.length - 1].k, 1), acc = 0;
+  for (let i = 0; i < 3650; i++){ acc += base * fac(k); if (acc >= rest) return {k, perDay: eur / rec.length, n: rec.length}; k = addDays(k, 1); }
+  return {k: null, perDay: eur / rec.length, n: rec.length};
+}
 function renderSolar(){
-  const sec = $("solSec"), ms = solarMonths().filter(x => x.id >= (ls.get("instDate") || SOL_DATE).slice(0, 7));
-  if (!ms.length){ sec.hidden = true; return; }
-  sec.hidden = false;
-  const tot = a => a.reduce((t, x) => t + x.eur, 0), totK = a => a.reduce((t, x) => t + x.kwh, 0);
-  const todayK = (DV && DV.today) || (H && H.today) || todayKey();
-  const y0 = +todayK.slice(0, 4) - (+todayK.slice(5, 7) >= 7 ? 0 : 1), seasonMs = ms.filter(x => x.id >= y0 + "-07");
-  const all = tot(ms), rows = [
-    line(`Depuis le début<small>${mLabel(ms[0].id)} → ${mLabel(ms[ms.length - 1].id)} · ${fK(totK(ms), 0)} produits</small>`, " ", fE0(all), {tot: true, bM: true}),
-    line(`Cette saison<small>depuis juillet ${y0} · ${fK(totK(seasonMs), 0)}</small>`, " ", seasonMs.length ? fE0(tot(seasonMs)) : "—", {bM: true})];
-  const cost = dec(ls.get("instCost")) || SOL_COST, idate = ls.get("instDate") || SOL_DATE;
-  let pay = "";
-  if (cost > 0 && /^\d{4}-\d{2}/.test(idate)){
-    const since = ms.filter(x => x.id >= idate.slice(0, 7)), saved = tot(since), pct = saved / cost * 100;
-    rows.push(line(`Remboursé à<small>${fE0(saved)} sur ${fE0(cost)}</small>`, " ", fr(pct, 0) + " %", {tot: true}));
-    const rec = ms.filter(x => !x.partial).slice(-12), avg = rec.length ? tot(rec) / rec.length : 0;
-    if (saved >= cost) pay = "Installation remboursée.";
-    else if (avg > 0){
-      const n = Math.ceil((cost - saved) / avg), t = new Date(); t.setDate(1); t.setMonth(t.getMonth() + n);
-      rows.push(line(`Remboursement estimé<small>au rythme des ${rec.length} derniers mois (${fE0(avg)}/mois)</small>`, " ", `vers ${pad2(t.getMonth() + 1)}/${t.getFullYear()}`));
-    }
-    if (since.length && ms[0].id > idate.slice(0, 7)) pay = "Les chiffres ne commencent qu'en " + mLabel(ms[0].id) + " : le remboursement est sous-estimé.";
-  } else pay = "Renseigne le coût et la date d'installation dans Réglages (roue crantée) pour voir le remboursement.";
-  $("solTot").innerHTML = rows.join("");
-  let cum = 0; const cums = ms.map(x => cum += x.eur);
-  barChart($("cSol"), ms.map((x, i) => ({key: x.id, label: MOIS_C[+x.id.slice(5, 7) - 1], v: {a: Math.max(0, x.eur)}, x, cum: cums[i]})), [{key: "a", color: "#F5B83D"}],
-    {stack: true, money: true, unit: " €", every: ms.length > 14 ? 3 : 1, aria: "Économies du solaire par mois", has: it => !!it.x,
-     onPick: it => pickTable($("cSolPick"), [["Mois", `${mLabel(it.x.id)}<small>${it.x.partial ? "en cours" : " "}</small>`], ["kWh", fr(it.x.kwh, 0)], ["Économie", fE0(it.x.eur), true], ["Cumul", fE0(it.cum), true]])});
-  $("solNote").textContent = "Économie = kWh produits × prix du kWh heure pleine du jour (jour par jour quand le fichier le donne). " + pay;
+  const S = D && D.sol, idate = ls.get("instDate") || SOL_DATE, cost = dec(ls.get("instCost")) || SOL_COST;
+  const blocks = ["solSave", "solPay", "solTom", "solDaySec", "solMonSec"];
+  blocks.forEach(b => $(b).hidden = true); $("solEmpty").hidden = !!S;
+  if (!S) return;
+  const today = D.today || todayKey(), yk = addDays(today, -1), sn = D.now && D.now.since;
+  const days = (S.days || []).map(d => ({k: d[0], kwh: d[1], eur: d[2], c: d[3]})).filter(d => d.k >= idate && ok_(d.kwh));
+  const lastK = days.length ? days[days.length - 1].k : "";
+  // Aujourd'hui (partiel) : relevés depuis minuit ; s'ils couvrent plusieurs jours (onglet Jours en retard), ils comptent dans les totaux seulement
+  const tod = sn && ok_(sn.sol) && sn.from > lastK && sn.from >= idate ? {k: sn.from, kwh: sn.sol, eur: ok_(sn.gain) ? sn.gain : null, c: sn.color, live: true} : null;
+  const isToday = tod && tod.k === today;
+  const sum = a => ({kwh: a.reduce((t, d) => t + (d.kwh || 0), 0), eur: a.reduce((t, d) => t + (d.eur || 0), 0)});
+  const all = days.concat(tod ? [tod] : []);
+  if (!all.length) return;
+  const yd = days.find(d => d.k === yk), mo = sum(all.filter(d => d.k.slice(0, 7) === today.slice(0, 7))), tot = sum(all);
+  const cell = (l, o, ex) => sunTile(l, o ? fE(o.eur) : "—", o ? fK(o.kwh, 1) + (ex || "") : " ", "money");
+  $("solTiles").innerHTML = cell("Aujourd'hui", isToday ? tod : null, " · en cours") + cell("Hier", yd) + cell("Ce mois-ci", mo) + cell("Depuis l'installation", tot);
+  $("solSave").hidden = false;
+  $("solSaveNote").textContent = `Depuis le ${dayShort(idate)}. ` + (isToday ? "" : "Les chiffres d'aujourd'hui arrivent avec les relevés de la journée. ") + "Chaque kWh solaire est compté au prix du kWh qu'il t'évite.";
+  // Rentabilité
+  const pct = cost > 0 ? tot.eur / cost * 100 : null;
+  if (pct != null){
+    $("solPay").hidden = false;
+    $("solGaugeBar").style.width = Math.max(0, Math.min(100, pct)).toFixed(1) + "%"; $("solGaugeTxt").textContent = `Remboursé à ${fr(pct, pct < 10 ? 1 : 0)} %`;
+    $("solGauge").setAttribute("aria-label", `Remboursé à ${fr(pct, 0)} pour cent`);
+    const rest = Math.max(0, cost - tot.eur), pr = rest > 0 ? solarProject(days, rest) : null;
+    const rows = [line(`Déjà économisé<small>sur ${fE0(cost)} investis le ${dayShort(idate)}</small>`, " ", fE(tot.eur), {bM: true, tot: true}), line("Reste à rembourser", " ", fE(rest), {bM: true})];
+    let note = "";
+    if (rest <= 0) rows.push(line("Installation remboursée", " ", "Bravo"));
+    else if (pr){
+      rows.push(line(`Remboursement complet<small>au rythme des ${pr.n} derniers jours (${fE(pr.perDay)}/jour)</small>`, " ", pr.k ? `vers ${MOIS_C[+pr.k.slice(5, 7) - 1]} ${pr.k.slice(0, 4)}` : "dans plus de 10 ans"));
+      note = "Estimation prudente : l'hiver produit bien moins que l'été, donc elle est calculée avec la saisonnalité habituelle de Haute-Savoie (juillet ≈ 4 fois plus que décembre) et s'affinera au fil des mois.";
+    } else note = "Pas encore assez de jours pour estimer la date de remboursement.";
+    $("solPayRows").innerHTML = rows.join(""); $("solPayNote").textContent = note;
+  }
+  // Demain + météo
+  const tiles = [], T = S.tom, M = S.meteo && S.meteo.k === today ? S.meteo : null;
+  if (M){ const w = wxIcon(M.v); tiles.push(`<div class="tile"><span class="l">Aujourd'hui</span><span class="v wx">${w[1]}<span>${esc(w[0])}</span></span><span class="n">&nbsp;</span></div>`); }
+  if (T && ok_(T.kwh)){
+    tiles.push(sunTile("Demain · production", fK(T.kwh, 1), "prévue"));
+    if (ok_(T.p)) tiles.push(sunTile("Demain · gain", fE(T.kwh * T.p), "prévu", "money"));
+  }
+  if (tiles.length){
+    $("solTom").hidden = false; $("solTomTiles").innerHTML = tiles.join("");
+    $("solTomNote").textContent = T && ok_(T.p) ? (T.c ? `Prévision de Home Assistant, valorisée au tarif heure pleine ${T.c.toLowerCase()} de demain.` : "Prévision de Home Assistant, valorisée au tarif heure pleine d'un jour bleu (la couleur de demain n'est pas encore connue).") : "";
+  }
+  // Graphiques
+  const items = all.map(d => ({key: d.k, label: shortDay(d.k), v: {a: Math.max(0, d.eur || 0)}, d, mark: d.c ? TDOT[d.c] : null}));
+  $("solDaySec").hidden = false;
+  barChart($("cSolD"), items, [{key: "a", color: "#F5B83D"}], {stack: true, money: true, unit: " €", every: items.length > 21 ? 7 : items.length > 10 ? 3 : 1, aria: "Ce que le solaire rapporte chaque jour depuis l'installation", has: it => !!it.d,
+    onPick: it => { const d = it.d; pickTable($("cSolDPick"), [["Jour", `${dayShort(d.k)}<small>${d.live ? "en cours" : d.c ? "jour " + d.c : " "}</small>`], ["Produit", fr(d.kwh, 1) + " kWh"], ["Économisé", fE(d.eur), true], ["Prix kWh", ok_(d.eur) && d.kwh > 0 ? fr(d.eur / d.kwh * 100, 1) + " c" : NA]]); }});
+  const mm = {}; all.forEach(d => { const id = d.k.slice(0, 7), m = mm[id] || (mm[id] = {id, kwh: 0, eur: 0, n: 0}); m.kwh += d.kwh || 0; m.eur += d.eur || 0; m.n++; });
+  const ms = Object.values(mm).sort((a, b) => a.id < b.id ? -1 : 1); let cum = 0; ms.forEach(m => m.cum = cum += m.eur);
+  $("solMonSec").hidden = false;
+  barChart($("cSolM"), ms.map(m => ({key: m.id, label: MOIS_C[+m.id.slice(5, 7) - 1], v: {a: m.eur}, m})), [{key: "a", color: "#F5B83D"}],
+    {stack: true, money: true, unit: " €", aria: "Ce que le solaire rapporte par mois", has: it => !!it.m,
+     onPick: it => { const m = it.m; pickTable($("cSolMPick"), [["Mois", `${mLabel(m.id)}<small>${m.id === today.slice(0, 7) ? "en cours" : " "}</small>`], ["Produit", fr(m.kwh, 0) + " kWh"], ["Économisé", fE(m.eur), true], ["Cumul", fE(m.cum), true]]); }});
 }
 function suiviGran(){
   const out = {}, rx = /^([a-zéû]+)\s+(\d{4})$/;
@@ -1102,7 +1183,7 @@ $("refresh").onclick = () => { load(true, $("refresh")); if (tab === "hist" || H
 
 // ---------- Onglets ----------
 let tab = "accueil";
-const VIEWS = {accueil:"vAccueil", hist:"vHist", facture:"vFacture", saisies:"vSaisies", reglages:"vReglages"};
+const VIEWS = {accueil:"vAccueil", hist:"vHist", solaire:"vSolaire", facture:"vFacture", saisies:"vSaisies", reglages:"vReglages"};
 const order = () => Object.keys(VIEWS).filter(k => k !== "reglages" && !(k === "saisies" && role !== "owner"));
 let prevTab = "accueil";
 function showTab(t, dir){
