@@ -210,6 +210,13 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
   .view.fade,.view.fade.fromR,.view.fade.fromL,.shake,.sheetbox{animation:none}
   .btn:active,.pad button:active,.pill:active{transform:none}
 }
+.tempoBar{margin:0 0 12px;padding:10px 12px;border-radius:14px;background:rgba(77,141,255,.08);border:1px solid rgba(77,141,255,.18)}
+.tbRow{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.tbDay,.tbCnt{display:flex;align-items:center;gap:6px;white-space:nowrap}
+.tbL{font-size:.78rem;opacity:.75}.tbV{font-weight:700}
+.tbCnt b{font-size:1.05rem}.tbCnt small{opacity:.6;font-size:.72rem}
+.tbDot{width:12px;height:12px;border-radius:50%;display:inline-block;border:1px solid rgba(255,255,255,.35)}
+.tbFoot{font-size:.72rem;opacity:.6;margin-top:4px;text-align:right}
 </style>
 </head>
 <body>
@@ -249,6 +256,15 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
 
   <!-- ACCUEIL -->
   <div class="view" id="vAccueil">
+    <section class="tempoBar" id="tempoBar" hidden aria-label="Jours Tempo">
+      <div class="tbRow">
+        <div class="tbDay"><span class="tbL">Demain</span><span class="tbDot" id="tbTom"></span><span class="tbV" id="tbTomL">…</span></div>
+        <div class="tbCnt"><span class="tbDot" style="background:var(--t-bleu)"></span><b id="tbB">–</b><small>/300</small></div>
+        <div class="tbCnt"><span class="tbDot" style="background:var(--t-blanc)"></span><b id="tbW">–</b><small>/43</small></div>
+        <div class="tbCnt"><span class="tbDot" style="background:var(--t-rouge)"></span><b id="tbR">–</b><small>/22</small></div>
+      </div>
+      <div class="tbFoot" id="tbFoot">jours restants</div>
+    </section>
     <section class="pot" aria-label="En ce moment" aria-live="polite">
       <div class="q">En ce moment, est-ce que je produis plus que je consomme ?</div>
       <div class="ring" id="ring">
@@ -928,7 +944,20 @@ function renderHist(h){
 // ---------- Chargement ----------
 let busy = false, loadedAt = 0;
 function setBusy(on, btn){ busy = on; $("refresh").disabled = on; btn && btn.classList.toggle("busy", on); }
+async function loadTempo(){
+  const T = "https://www.api-couleur-tempo.fr/api/", lib = {1:"Bleu",2:"Blanc",3:"Rouge"};
+  try{
+    const [st, tm] = await Promise.all([fetch(T+"stats",{headers:{accept:"application/json"}}).then(r=>r.json()), fetch(T+"jourTempo/tomorrow").then(r=>r.json())]);
+    $("tbB").textContent = st.joursBleusRestants; $("tbW").textContent = st.joursBlancsRestants; $("tbR").textContent = st.joursRougesRestants;
+    const tb = $("tbB").nextElementSibling; if (tb) tb.textContent = "/" + (st.joursBleusRestants + st.joursBleusConsommes);
+    const c = lib[tm.codeJour];
+    $("tbTom").style.background = c ? TCOL[c] : "transparent"; $("tbTomL").textContent = c || "pas encore connu";
+    $("tbFoot").textContent = "jours restants, saison " + st.periode;
+    $("tempoBar").hidden = false;
+  }catch(e){ /* API Tempo indisponible : bandeau masqué */ }
+}
 async function load(force, btn){
+  loadTempo();
   if (busy) return; setBusy(true, btn);
   try{ const d = await api("data", force ? 1 : null); render(d); ls.set("lastData", JSON.stringify(d)); loadedAt = Date.now(); if (!(d.errs && d.errs.length)) note(null); }
   catch(e){ note(e.message, true); }
