@@ -1198,7 +1198,7 @@ async function loadTempo(){
     $("tbB").textContent = st.joursBleusRestants; $("tbW").textContent = st.joursBlancsRestants; $("tbR").textContent = st.joursRougesRestants;
     const tb = $("tbB").nextElementSibling; if (tb) tb.textContent = "/" + (st.joursBleusRestants + st.joursBleusConsommes);
     const c = lib[tm.codeJour];
-    $("tbTom").style.background = c ? TCOL[c] : "transparent"; $("tbTomL").textContent = c || "pas encore connu";
+    $("tbTom").style.background = c ? TCOL[c] : "transparent"; $("tbTomL").textContent = c || "–";
     $("tbFoot").textContent = "jours restants, saison " + st.periode;
     $("tempoBar").hidden = false;
   }catch(e){ /* API Tempo indisponible : bandeau masqué */ }
