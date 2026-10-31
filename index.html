@@ -1071,8 +1071,8 @@ WX["partlycloudy-night"] = ["Éclaircies", WX.partlycloudy[1]]; WX["windy-varian
 const wxIcon = (v, sz=28) => { const w = WX[v] || [v, WX.cloudy[1]]; return [w[0], `<svg viewBox="0 0 24 24" width="${sz}" height="${sz}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${w[1]}</svg>`]; };
 const sunTile = (l, v, n, cls) => `<div class="tile"><span class="l">${l}</span><span class="v${cls ? " " + cls : ""}">${v}</span><span class="n">${n || "&nbsp;"}</span></div>`;
 function solarProject(days, rest){
-  // rythme des 30 derniers jours ramené à un mois « moyen », puis jour par jour avec la saisonnalité de Haute-Savoie
-  const rec = days.slice(-30); if (rec.length < 5) return null;
+  // rythme de tout l'historique depuis l'installation, ramené à un mois « moyen », puis jour par jour avec la saisonnalité de Haute-Savoie
+  const rec = days; if (rec.length < 5) return null;
   const fac = k => SOL_F[+k.slice(5, 7) - 1] / SOL_FM;
   const eur = rec.reduce((a, d) => a + (d.eur || 0), 0), f = rec.reduce((a, d) => a + fac(d.k), 0);
   if (eur <= 0 || f <= 0) return null;
@@ -1110,7 +1110,7 @@ function renderSolar(){
     let note = "";
     if (rest <= 0) rows.push(line("Installation remboursée", " ", "Bravo"));
     else if (pr){
-      rows.push(line(`Remboursement complet<small>au rythme des ${pr.n} derniers jours (${fE(pr.perDay)}/jour)</small>`, " ", pr.k ? `vers ${MOIS_C[+pr.k.slice(5, 7) - 1]} ${pr.k.slice(0, 4)}` : "dans plus de 10 ans"));
+      rows.push(line(`Remboursement complet<small>au rythme depuis l'installation (${pr.n} jours, ${fE(pr.perDay)}/jour en moyenne)</small>`, " ", pr.k ? `vers ${MOIS_C[+pr.k.slice(5, 7) - 1]} ${pr.k.slice(0, 4)}` : "dans plus de 10 ans"));
       note = "Estimation prudente : l'hiver produit bien moins que l'été, donc elle est calculée avec la saisonnalité habituelle de Haute-Savoie (juillet ≈ 4 fois plus que décembre) et s'affinera au fil des mois.";
     } else note = "Pas encore assez de jours pour estimer la date de remboursement.";
     $("solPayRows").innerHTML = rows.join(""); $("solPayNote").textContent = note;
