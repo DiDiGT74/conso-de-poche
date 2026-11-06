@@ -426,6 +426,18 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
 
   <!-- EAU -->
   <div class="view" id="vEau" hidden>
+    <section class="block" id="wEst" hidden>
+      <h2>Prochaine facture d'eau</h2>
+      <p id="wEstTxt" style="margin:6px 0;font-size:1.05rem"></p>
+      <div id="wRows"></div>
+      <p class="foot" id="wNote" style="margin:0"></p>
+    </section>
+    <section class="curve" id="wHistSec" hidden>
+      <h2>Factures d'eau</h2>
+      <div class="chart" id="cWat"></div>
+      <div class="pick" id="cWatPick" aria-live="polite"></div>
+      <p class="foot" id="wHistNote"></p>
+    </section>
     <section class="block" id="eauSec" hidden>
       <h2>Restrictions d'eau</h2>
       <div class="eauNow"><span class="eauDot" id="eauDot"></span><div><div class="eauLvl" id="eauLvl"></div><div class="foot" style="margin:2px 0 0" id="eauUntil"></div></div></div>
@@ -887,7 +899,7 @@ function render(d){
   D = d;
   if (d.role && d.role !== role){ role = d.role; ls.set("role", role); }
   applyRole();
-  const parts = [renderNow, renderCurve, renderYest, renderToday, renderMonth, renderCmp, renderPel, renderAbout, renderFact, renderFacture, renderSolar, renderPoele, renderPoeleJ].concat(role === "owner" ? [renderTarifs, renderLog] : []);
+  const parts = [renderNow, renderCurve, renderYest, renderToday, renderMonth, renderCmp, renderPel, renderAbout, renderFact, renderFacture, renderSolar, renderPoele, renderPoeleJ, renderEauFac].concat(role === "owner" ? [renderTarifs, renderLog] : []);
   for (const f of parts){ try{ f(); }catch(e){ console.error(e); } }
   if (d.errs && d.errs.length) note("Une partie des chiffres manque : " + d.errs.join(" ; "), true);
 }
@@ -1217,6 +1229,64 @@ async function loadHist(force){
 $("refresh").onclick = () => { load(true, $("refresh")); if (tab === "hist" || H) loadHist(true); DV = null; if (!$("devSheet").hidden) loadDev(true).then(renderDev).catch(e => note(e.message, true)); else if (H) ensureDV(true); };
 
 
+// ---------- Eau : factures CCFU (onglet Eau_Factures de « HA données ») ----------
+// Relevé du compteur en janvier et en juillet, facture 3 à 4 mois après. Provision mensuelle : cellule « Provision mensuelle ».
+function eauParse(rows){
+  if (!Array.isArray(rows) || !rows.length) return null;
+  const h = rows[0].map(x => String(x).trim()), ci = n => h.indexOf(n);
+  const iD = ci("Date facture"), iM = ci("Montant_EUR"), iC = ci("Conso_m3"), iI = ci("Index_m3"), iR = ci("Releve");
+  const dk = v => { v = String(v || "").trim(); const m = v.match(/^(\d{4})-(\d{2})(?:-(\d{2}))?/); return m ? `${m[1]}-${m[2]}-${m[3] || "15"}` : null; };
+  const nb = v => typeof v === "number" ? v : (String(v).trim() === "" ? null : parseFloat(String(v).replace(/\s/g, "").replace(",", ".")));
+  const bills = [], reads = []; let ttc = null, loc = null, prov = null;
+  rows.slice(1).forEach(r => {
+    const d = dk(r[iD]), rel = dk(r[iR]), m = nb(r[iM]), c = nb(r[iC]), ix = nb(r[iI]);
+    if (d && m > 0) bills.push({d, rel, eur: m, m3: c});
+    if (ix != null && !isNaN(ix) && (rel || d)) reads.push({d: rel || d, ix});
+    const lab = String(r[6] || "");
+    if (/^TOTAL variable/i.test(lab) && ttc == null) ttc = nb(r[8]);
+    if (/^Location compteur/i.test(lab) && loc == null) loc = nb(r[8]);
+    if (/^Provision mensuelle/i.test(lab)) prov = nb(r[7]);
+  });
+  bills.sort((a, b) => a.d < b.d ? -1 : 1); reads.sort((a, b) => a.d < b.d ? -1 : 1);
+  return {bills, reads, ttc, loc, prov};
+}
+const moFr = k => MOIS[+k.slice(5,7) - 1] + " " + k.slice(0,4);
+const dDiff = (a, b) => Math.round((dOf(b) - dOf(a)) / 864e5);
+function renderEauFac(){
+  const E = eauParse(D && D.eau);
+  $("wEst").hidden = $("wHistSec").hidden = !E || !E.bills.length;
+  if (!E || !E.bills.length) return;
+  const B = E.bills, last = B[B.length - 1], today = D.today || new Date().toISOString().slice(0,10), prov = E.prov || 0;
+  // Délai moyen relevé → facture, et prochain relevé (6 mois après le dernier)
+  const lags = B.filter(b => b.rel).map(b => dDiff(b.rel, b.d)), lag = lags.length ? Math.round(lags.reduce((a, b) => a + b, 0) / lags.length) : 100;
+  const rel0 = last.rel || addDays(last.d, -lag), rel1 = addDays(rel0, 182), bill1 = addDays(rel1, lag);
+  // Conso depuis le dernier relevé facturé : index de départ = index au relevé, index actuel = dernière lecture connue
+  const r0 = E.reads.filter(r => r.d <= rel0).pop(), rN = E.reads.filter(r => r.d > rel0).pop();
+  const rows = []; let est = null;
+  if (r0 && rN && rN.ix >= r0.ix && E.ttc){
+    const used = rN.ix - r0.ix, nd = Math.max(1, dDiff(rel0, rN.d)), perDay = used / nd, tot = perDay * dDiff(rel0, rel1);
+    const months = Math.round(dDiff(rel0, rel1) / 30.4), abo = (E.loc || 0) * months;
+    est = tot * E.ttc + abo;
+    rows.push(line(`Conso depuis le ${shortDay(rel0)}<small>${fr(used, 0)} m³ en ${nd} j · ${fr(perDay * 1000, 0)} L/jour · relevé du ${shortDay(rN.d)}</small>`, `${fr(used, 0)} m³`, " "));
+    rows.push(line(`Projection au relevé de ${moFr(rel1)}<small>${fr(tot, 0)} m³ × ${fr(E.ttc, 2)} €/m³ TTC + compteur ${fE0(abo)}</small>`, `${fr(tot, 0)} m³`, fE0(est), {bM: true}));
+  }
+  const nProv = Math.max(0, Math.round(dDiff(last.d, bill1) / 30.4)), saved = nProv * prov;
+  if (prov) rows.push(line(`Mis de côté d'ici là<small>${nProv} mois × ${fE0(prov)}, de ${moFr(last.d)} à ${moFr(bill1)}</small>`, " ", fE0(saved), {bM: true}));
+  if (est != null && prov){
+    const gap = saved - est;
+    rows.push(line(gap >= 0 ? "Marge<small>la provision couvre la facture</small>" : `Il manquera<small>soit ${fE0(Math.abs(gap) / Math.max(1, nProv))} de plus par mois</small>`, " ", fE0(Math.abs(gap)), {bM: true, tot: true, cls: gap >= 0 ? "up" : "down"}));
+  }
+  $("wEstTxt").innerHTML = est != null ? `<b>${MOIS[+bill1.slice(5,7) - 1]} ${bill1.slice(0,4)}</b> : environ <b class="money ${prov && est > saved ? "down" : "up"}">${fE0(est)}</b>${prov ? ` <small>(mis de côté ${fE0(saved)})</small>` : ""}` : '<span class="empty">Pas encore de relevé récent pour estimer.</span>';
+  $("wRows").innerHTML = rows.join("");
+  const y12 = B.filter(b => b.d > addDays(today, -365)), s12 = y12.reduce((a, b) => a + b.eur, 0);
+  $("wNote").textContent = `Relevé du compteur en janvier et juillet, facture environ ${Math.round(lag / 30)} mois après.` + (prov && y12.length ? ` Sur 12 mois : ${fE0(s12)} facturés pour ${fE0(prov * 12)} mis de côté.` : "");
+  const items = B.slice(-10).map(b => ({key: b.d, label: b.d.slice(2,4) + "/" + b.d.slice(5,7), v: {eur: b.eur}, b}));
+  barChart($("cWat"), items, [{key: "eur", color: "#4D8DFF"}], {money: true, unit: " €", aria: "Montant des factures d'eau", onPick: it => {
+    const b = it.b, pm = b.m3 ? b.eur / b.m3 : null;
+    pickTable($("cWatPick"), [["Facture", `${shortDay(b.d)}<small>${b.d.slice(0,4)}</small>`], ["Période", b.rel ? `jusqu'au ${shortDay(b.rel)}` : "—"], ["Conso", b.m3 ? fr(b.m3, 0) + " m³" : "—"], ["Montant", fE(b.eur), true], ["€/m³", pm ? fr(pm, 2) + " €" : "—", true]]);
+  }});
+  $("wHistNote").textContent = "Une facture par semestre. €/m³ abonnement compris.";
+}
 // ---------- Eau (VigiEau, appel direct) ----------
 const EAU = {rien:["Aucune restriction","#5FD3A0"], vigilance:["Vigilance","#F5D63D"], alerte:["Alerte","#FF9F2E"], alerte_renforcee:["Alerte renforcée","#FF6B5E"], crise:["Crise","#B3202E"]};
 const EAU_ORD = ["rien", "vigilance", "alerte", "alerte_renforcee", "crise"];

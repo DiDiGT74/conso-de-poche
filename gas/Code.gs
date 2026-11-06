@@ -209,6 +209,7 @@ function readHA_(S) {
       .filter(e => e.from && e.eur != null).sort((a, b) => a.from < b.from ? -1 : 1);
   });
   safe_(S, 'Factures', () => { S.factures = factures_(cells_(ss.getSheetByName('Factures').getDataRange())); });
+  safe_(S, 'Eau_Factures', () => { const sh = ss.getSheetByName('Eau_Factures'); S.eau = sh ? cells_(sh.getDataRange()) : null; });
 }
 function readSeason_(S, ss, name) {
   const sh = ss.getSheetByName(name);
@@ -366,7 +367,7 @@ function getData_(force) {
     at: Date.now(), today: S.today,
     now: nowBlock_(S), curve: S.releves.slice(-110).map(r => [Math.round(r.t.getTime() / 60000), num_(r.Reseau_VA) || 0, num_(r.Solaire_W) || 0]),
     sol: sol_(S), poele: poele_(S), yest: yesterday_(S), month: month_(S), reg: reg_(S), abo: aboAt_(S, S.today),
-    echeancier: S.echeancier.map(e => ({ from: e.from, eur: e.eur, type: e.type, rem: e.rem })), factures: S.factures, cmp: compare_(S), pel: pellets_(S),
+    echeancier: S.echeancier.map(e => ({ from: e.from, eur: e.eur, type: e.type, rem: e.rem })), factures: S.factures, eau: S.eau || null, cmp: compare_(S), pel: pellets_(S),
     tarifs: S.tarifs.map(t => ({ from: t.from, p: TAR.map(k => t.p[k]), by: t.by, abo: t.abo })),
     tarifNow: (S.tarifs.filter(t => t.from <= S.today).pop() || {}).from || null,
     seasonPrices: S.seasonPrices ? TAR.map(k => S.seasonPrices[k]) : null,
