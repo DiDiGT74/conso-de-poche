@@ -526,11 +526,35 @@ function getHist_(force) {
   const S = newState_();
   readHA_(S);
   readEL_(S, true);
-  const out = { at: Date.now(), today: S.today, days: days30_(S), months: months12_(S), seasons: seasons_(S), dev: devices_(S), errs: S.errs };
+  const out = { at: Date.now(), today: S.today, days: days30_(S), months: months12_(S), seasons: seasons_(S), dev: devices_(S), chauf: null, errs: S.errs };
+  safe_(S, 'Chauffage', () => { out.chauf = chauffage_(S); });
   out.ms = { total: Date.now() - t0 };
   snapPut_('hist', out);
   ensurePrecalc_();
   return out;
+}
+/* Coût du chauffage : granulés estimés d'après les relevés de 15 min, même modèle que l'automatisation HA
+ * « Poêle - estimation des granulés restants » (0,6 kg/h en P1 → 1,6 kg/h en P5, allumage compté comme P3). */
+const KG_SAC = 15;
+function chauffage_(S) {
+  const sh = SpreadsheetApp.openById(HA_ID).getSheetByName('Releves'), last = sh.getLastRow(), nc = sh.getLastColumn();
+  if (last < 2) return null;
+  const head = sh.getRange(1, 1, 1, nc).getDisplayValues()[0];
+  const iT = head.indexOf('Horodatage'), iP = head.indexOf('Poele_phase'), iW = head.indexOf('Poele_puissance');
+  if (iT < 0 || iP < 0) return null;
+  const ss = seasonStart_(seasonOf_(S.today)), days = {};
+  cells_(sh.getRange(2, 1, last - 1, nc)).forEach(r => {
+    const ph = String(r[iP] || '').trim().toLowerCase();
+    if (ph !== 'on' && ph !== 'ignition') return;
+    const t = parseStamp_(r[iT]); if (!t) return;
+    const k = Utilities.formatDate(t, TZ, 'yyyy-MM-dd'); if (k < ss) return;
+    let p = iW >= 0 ? Math.round(num_(r[iW]) || 0) : 0;
+    if (ph === 'ignition' || p < 1) p = 3;
+    days[k] = (days[k] || 0) + (0.6 + (Math.min(p, 5) - 1) * 0.25) * 0.25;
+  });
+  Object.keys(days).forEach(k => { days[k] = r2_(days[k]); });
+  const prix = num_(S.lastVals.Prix_sac), sacs = num_(S.lastVals.Sacs_granules);
+  return { prix: prix, kgSac: KG_SAC, sacs: sacs, from: ss, days: days };
 }
 function days30_(S) {
   const end = addDays_(S.today, -1), out = [], ph = {};
