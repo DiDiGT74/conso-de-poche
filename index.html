@@ -1347,13 +1347,15 @@ let tab = "accueil";
 const VIEWS = {accueil:"vAccueil", hist:"vHist", solaire:"vSolaire", poele:"vPoele", facture:"vFacture", eau:"vEau", saisies:"vSaisies", reglages:"vReglages"};
 const order = () => Object.keys(VIEWS).filter(k => k !== "reglages" && k !== "saisies");
 let prevTab = "accueil";
+// Historique gardé en local : à recharger s'il date d'un autre jour ou de plus de 30 min (sinon le nouveau mois n'apparaît pas).
+const histStale = () => !H || H.today !== new Date().toLocaleDateString("sv-SE", {timeZone:"Europe/Paris"}) || Date.now() - (H.at || 0) > 30*60e3;
 function showTab(t, dir){
   if (t === tab || !(order().includes(t) || t === "reglages" || (t === "saisies" && role === "owner"))) return; if (tab !== "reglages" && tab !== "saisies") prevTab = tab; tab = t;
   document.querySelectorAll("#tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.t === t ? "true" : "false"));
   $("gear").setAttribute("aria-pressed", t === "reglages" ? "true" : "false"); $("saisBtn").setAttribute("aria-pressed", t === "saisies" ? "true" : "false");
   for (const k in VIEWS){ const v = $(VIEWS[k]); v.hidden = k !== t; if (k === t && !reduceMotion){ v.classList.remove("fade", "fromR", "fromL"); void v.offsetWidth; v.classList.add("fade"); if (dir) v.classList.add(dir > 0 ? "fromR" : "fromL"); } }
   window.scrollTo(0, 0);
-  if (t === "hist" && !H && KEY()) loadHist(false);
+  if (t === "hist" && histStale() && KEY()) loadHist(false);
   if (t === "eau") loadEau();
 }
 document.querySelectorAll("#tabs button").forEach(b => b.onclick = () => showTab(b.dataset.t));
@@ -1490,7 +1492,7 @@ function unlock(){
   applyRole(); bioState(); pushState();
   offerBio();
   if (!KEY() || !API()){ note(NOT_LINKED, true); return; }
-  load(false).then(() => { if (tab === "hist") loadHist(false); });
+  load(false).then(() => { if (tab === "hist" || histStale()) loadHist(false); });
 }
 function lock(){
   const L = $("lock"); entry = ""; firstPin = null;
