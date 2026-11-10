@@ -277,11 +277,16 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
     <button type="button" role="tab" data-g="chauf" aria-selected="false">Chauffage</button>
     <button type="button" role="tab" data-g="eau" aria-selected="false">Eau</button>
   </nav>
-  <nav class="sub" id="sub" role="tablist" aria-label="Électricité" hidden>
+  <nav class="sub" id="sub" data-g="elec" role="tablist" aria-label="Électricité" hidden>
     <button type="button" role="tab" data-t="hist" aria-selected="false">Historique</button>
     <button type="button" role="tab" data-t="solaire" aria-selected="false">Solaire</button>
     <button type="button" role="tab" data-t="couts" aria-selected="false">Coûts</button>
     <button type="button" role="tab" data-t="facture" aria-selected="false">Facture</button>
+  </nav>
+  <nav class="sub" id="subEau" data-g="eau" role="tablist" aria-label="Eau" hidden>
+    <button type="button" role="tab" data-t="eau" aria-selected="false">Conso</button>
+    <button type="button" role="tab" data-t="eauF" aria-selected="false">Facture</button>
+    <button type="button" role="tab" data-t="eauV" aria-selected="false">VigiEau</button>
   </nav>
 
   <div class="note" id="note" hidden role="status"></div>
@@ -460,6 +465,8 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
       <div class="pick" id="cWuMPick" aria-live="polite"></div>
       <p class="foot" id="wuNote" style="margin:0"></p>
     </section>
+  </div>
+  <div class="view" id="vEauF" hidden>
     <section class="block" id="wEst" hidden>
       <h2>Prochaine facture d'eau</h2>
       <p id="wEstTxt" style="margin:6px 0;font-size:1.05rem"></p>
@@ -472,6 +479,9 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
       <div class="pick" id="cWatPick" aria-live="polite"></div>
       <p class="foot" id="wHistNote"></p>
     </section>
+    <p class="empty" id="wFacMsg" style="text-align:center;margin-top:12px">Pas encore de facture d'eau dans le fichier.</p>
+  </div>
+  <div class="view" id="vEauV" hidden>
     <section class="block" id="eauSec" hidden>
       <h2>Restrictions d'eau</h2>
       <div class="eauNow"><span class="eauDot" id="eauDot"></span><div><div class="eauLvl" id="eauLvl"></div><div class="foot" style="margin:2px 0 0" id="eauUntil"></div></div></div>
@@ -1346,7 +1356,7 @@ const moFr = k => MOIS[+k.slice(5,7) - 1] + " " + k.slice(0,4);
 const dDiff = (a, b) => Math.round((dOf(b) - dOf(a)) / 864e5);
 function renderEauFac(){
   const E = eauParse(D && D.eau);
-  $("wEst").hidden = $("wHistSec").hidden = !E || !E.bills.length;
+  $("wEst").hidden = $("wHistSec").hidden = !E || !E.bills.length; $("wFacMsg").hidden = !$("wEst").hidden;
   if (!E || !E.bills.length) return;
   const B = E.bills, last = B[B.length - 1], today = D.today || new Date().toISOString().slice(0,10), prov = E.prov || 0;
   // Délai moyen relevé → facture, et prochain relevé (6 mois après le dernier)
@@ -1436,27 +1446,27 @@ function renderEau(zones, h){
 
 // ---------- Onglets ----------
 let tab = "accueil";
-const VIEWS = {accueil:"vAccueil", hist:"vHist", solaire:"vSolaire", couts:"vCouts", facture:"vFacture", poele:"vPoele", eau:"vEau", saisies:"vSaisies", reglages:"vReglages"};
-const GROUP = {accueil:"accueil", hist:"elec", solaire:"elec", couts:"elec", facture:"elec", poele:"chauf", eau:"eau"};
-const lastIn = {elec: "hist"};
+const VIEWS = {accueil:"vAccueil", hist:"vHist", solaire:"vSolaire", couts:"vCouts", facture:"vFacture", poele:"vPoele", eau:"vEau", eauF:"vEauF", eauV:"vEauV", saisies:"vSaisies", reglages:"vReglages"};
+const GROUP = {accueil:"accueil", hist:"elec", solaire:"elec", couts:"elec", facture:"elec", poele:"chauf", eau:"eau", eauF:"eau", eauV:"eau"};
+const lastIn = {elec: "hist", eau: "eau"};
 const order = () => Object.keys(VIEWS).filter(k => k !== "reglages" && k !== "saisies");
 let prevTab = "accueil";
 // Historique gardé en local : à recharger s'il date d'un autre jour ou de plus de 30 min (sinon le nouveau mois n'apparaît pas).
 const histStale = () => !H || H.today !== new Date().toLocaleDateString("sv-SE", {timeZone:"Europe/Paris"}) || Date.now() - (H.at || 0) > 30*60e3;
 function showTab(t, dir){
   if (t === tab || !(order().includes(t) || t === "reglages" || (t === "saisies" && role === "owner"))) return; if (tab !== "reglages" && tab !== "saisies") prevTab = tab; tab = t;
-  const g = GROUP[t]; if (g === "elec") lastIn.elec = t;
+  const g = GROUP[t]; if (lastIn[g]) lastIn[g] = t;
   document.querySelectorAll("#tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.g === g ? "true" : "false"));
-  document.querySelectorAll("#sub button").forEach(b => b.setAttribute("aria-selected", b.dataset.t === t ? "true" : "false"));
-  $("sub").hidden = g !== "elec";
+  document.querySelectorAll(".sub button").forEach(b => b.setAttribute("aria-selected", b.dataset.t === t ? "true" : "false"));
+  document.querySelectorAll(".sub").forEach(n => n.hidden = n.dataset.g !== g);
   $("gear").setAttribute("aria-pressed", t === "reglages" ? "true" : "false"); $("saisBtn").setAttribute("aria-pressed", t === "saisies" ? "true" : "false");
   for (const k in VIEWS){ const v = $(VIEWS[k]); v.hidden = k !== t; if (k === t && !reduceMotion){ v.classList.remove("fade", "fromR", "fromL"); void v.offsetWidth; v.classList.add("fade"); if (dir) v.classList.add(dir > 0 ? "fromR" : "fromL"); } }
   window.scrollTo(0, 0);
   if (t === "hist" && histStale() && KEY()) loadHist(false);
-  if (t === "eau") loadEau();
+  if (t === "eauV") loadEau();
 }
-document.querySelectorAll("#tabs button").forEach(b => b.onclick = () => { const g = b.dataset.g; showTab(g === "elec" ? lastIn.elec : g === "chauf" ? "poele" : g); });
-document.querySelectorAll("#sub button").forEach(b => b.onclick = () => showTab(b.dataset.t));
+document.querySelectorAll("#tabs button").forEach(b => b.onclick = () => { const g = b.dataset.g; showTab(lastIn[g] || (g === "chauf" ? "poele" : g)); });
+document.querySelectorAll(".sub button").forEach(b => b.onclick = () => showTab(b.dataset.t));
 $("gear").onclick = () => showTab(tab === "reglages" ? (order().includes(prevTab) ? prevTab : "accueil") : "reglages");
 $("setBack").onclick = () => $("gear").click();
 $("saisBtn").onclick = () => showTab(tab === "saisies" ? (order().includes(prevTab) ? prevTab : "accueil") : "saisies");
