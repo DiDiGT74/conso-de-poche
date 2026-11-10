@@ -278,10 +278,14 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
     <button type="button" role="tab" data-g="eau" aria-selected="false">Eau</button>
   </nav>
   <nav class="sub" id="sub" data-g="elec" role="tablist" aria-label="Électricité" hidden>
-    <button type="button" role="tab" data-t="hist" aria-selected="false">Historique</button>
+    <button type="button" role="tab" data-t="hist" aria-selected="false">Conso</button>
+    <button type="button" role="tab" data-t="app" aria-selected="false">Appareils</button>
     <button type="button" role="tab" data-t="solaire" aria-selected="false">Solaire</button>
-    <button type="button" role="tab" data-t="couts" aria-selected="false">Coûts</button>
     <button type="button" role="tab" data-t="facture" aria-selected="false">Facture</button>
+  </nav>
+  <nav class="sub" id="subChauf" data-g="chauf" role="tablist" aria-label="Chauffage" hidden>
+    <button type="button" role="tab" data-t="poele" aria-selected="false">Poêle</button>
+    <button type="button" role="tab" data-t="couts" aria-selected="false">Coût</button>
   </nav>
   <nav class="sub" id="subEau" data-g="eau" role="tablist" aria-label="Eau" hidden>
     <button type="button" role="tab" data-t="eau" aria-selected="false">Conso</button>
@@ -388,17 +392,19 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
       <p class="foot">Achats au réseau. Le mois en cours est partiel.</p>
     </section>
 
-    <section class="block">
-      <h2>Par appareil</h2>
-      <label class="f">Mois<select id="devMonth"></select></label>
-      <div id="devRows" style="margin-top:6px"><p class="empty">Chargement…</p></div>
-      <p class="foot" id="devNote"></p>
-    </section>
 
     <section class="block">
       <h2>Saisons (12 juillet → 11 juillet)</h2>
       <div class="tbl" id="seasons"><p class="empty">Chargement…</p></div>
       <p class="foot" id="seasonsNote"></p>
+    </section>
+  </div>
+  <div class="view" id="vApp" hidden>
+    <section class="block">
+      <h2>Par appareil</h2>
+      <label class="f">Mois<select id="devMonth"></select></label>
+      <div id="devRows" style="margin-top:6px"><p class="empty">Chargement…</p></div>
+      <p class="foot" id="devNote"></p>
     </section>
   </div>
 
@@ -437,7 +443,7 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
   <!-- COÛTS PAR POSTE -->
   <div class="view" id="vCouts" hidden>
     <section class="block" id="chaufSec">
-      <h2>Coût du chauffage</h2>
+      <h2>Coût des granulés</h2>
       <div id="chaufRows"><p class="empty">En attente des chiffres.</p></div>
       <div id="chaufChartW" hidden>
         <p class="foot" style="margin:12px 0 4px">Granulés brûlés par jour (30 jours)</p>
@@ -1446,9 +1452,9 @@ function renderEau(zones, h){
 
 // ---------- Onglets ----------
 let tab = "accueil";
-const VIEWS = {accueil:"vAccueil", hist:"vHist", solaire:"vSolaire", couts:"vCouts", facture:"vFacture", poele:"vPoele", eau:"vEau", eauF:"vEauF", eauV:"vEauV", saisies:"vSaisies", reglages:"vReglages"};
-const GROUP = {accueil:"accueil", hist:"elec", solaire:"elec", couts:"elec", facture:"elec", poele:"chauf", eau:"eau", eauF:"eau", eauV:"eau"};
-const lastIn = {elec: "hist", eau: "eau"};
+const VIEWS = {accueil:"vAccueil", hist:"vHist", app:"vApp", solaire:"vSolaire", facture:"vFacture", poele:"vPoele", couts:"vCouts", eau:"vEau", eauF:"vEauF", eauV:"vEauV", saisies:"vSaisies", reglages:"vReglages"};
+const GROUP = {accueil:"accueil", hist:"elec", app:"elec", solaire:"elec", facture:"elec", poele:"chauf", couts:"chauf", eau:"eau", eauF:"eau", eauV:"eau"};
+const lastIn = {elec: "hist", chauf: "poele", eau: "eau"};
 const order = () => Object.keys(VIEWS).filter(k => k !== "reglages" && k !== "saisies");
 let prevTab = "accueil";
 // Historique gardé en local : à recharger s'il date d'un autre jour ou de plus de 30 min (sinon le nouveau mois n'apparaît pas).
@@ -1462,7 +1468,7 @@ function showTab(t, dir){
   $("gear").setAttribute("aria-pressed", t === "reglages" ? "true" : "false"); $("saisBtn").setAttribute("aria-pressed", t === "saisies" ? "true" : "false");
   for (const k in VIEWS){ const v = $(VIEWS[k]); v.hidden = k !== t; if (k === t && !reduceMotion){ v.classList.remove("fade", "fromR", "fromL"); void v.offsetWidth; v.classList.add("fade"); if (dir) v.classList.add(dir > 0 ? "fromR" : "fromL"); } }
   window.scrollTo(0, 0);
-  if (["hist", "couts", "solaire"].includes(t) && histStale() && KEY()) loadHist(false);
+  if (["hist", "app", "couts", "solaire"].includes(t) && histStale() && KEY()) loadHist(false);
   if (t === "eauV") loadEau();
 }
 document.querySelectorAll("#tabs button").forEach(b => b.onclick = () => { const g = b.dataset.g; showTab(lastIn[g] || (g === "chauf" ? "poele" : g)); });
