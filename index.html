@@ -1228,7 +1228,7 @@ function renderPoeleJ(){
 }
 function renderChauf(){
   const C = H && H.chauf, el = $("chaufRows");
-  if (!C || !C.days){ el.innerHTML = '<p class="empty">Pas encore de relevés du poêle cette saison.</p>'; $("chaufChartW").hidden = true; $("chaufNote").textContent = ""; return; }
+  if (!C || !C.days){ const err = H && (H.errs || []).find(e => /chauffage/i.test(e)); el.innerHTML = `<p class="empty">${!H || histStale() ? "Chargement des relevés du poêle…" : err ? "Calcul du poêle en erreur : " + esc(String(err)) : "Pas encore de relevés du poêle cette saison."}</p>`; $("chaufChartW").hidden = true; $("chaufNote").textContent = ""; return; }
   const pk = ok_(C.prix) && C.kgSac ? C.prix / C.kgSac : null, eur = kg => pk != null ? kg * pk : null;
   const today = H.today, yest = new Date(new Date(today + "T12:00:00").getTime() - 864e5).toLocaleDateString("sv-SE");
   const sum = (from, to) => { let kg = 0, n = 0; for (const k in C.days){ if (k >= from && k <= to && C.days[k] > 0){ kg += C.days[k]; n++; } } return {kg, n}; };
@@ -1462,7 +1462,7 @@ function showTab(t, dir){
   $("gear").setAttribute("aria-pressed", t === "reglages" ? "true" : "false"); $("saisBtn").setAttribute("aria-pressed", t === "saisies" ? "true" : "false");
   for (const k in VIEWS){ const v = $(VIEWS[k]); v.hidden = k !== t; if (k === t && !reduceMotion){ v.classList.remove("fade", "fromR", "fromL"); void v.offsetWidth; v.classList.add("fade"); if (dir) v.classList.add(dir > 0 ? "fromR" : "fromL"); } }
   window.scrollTo(0, 0);
-  if (t === "hist" && histStale() && KEY()) loadHist(false);
+  if (["hist", "couts", "solaire"].includes(t) && histStale() && KEY()) loadHist(false);
   if (t === "eauV") loadEau();
 }
 document.querySelectorAll("#tabs button").forEach(b => b.onclick = () => { const g = b.dataset.g; showTab(lastIn[g] || (g === "chauf" ? "poele" : g)); });
