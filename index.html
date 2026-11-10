@@ -444,11 +444,14 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
     <section class="block" id="wUse" hidden>
       <h2>Ma conso d'eau</h2>
       <div class="tiles">
-        <div class="tile"><span class="l">Hier</span><span class="v" id="wuY">—</span><span class="n" id="wuYN">&nbsp;</span></div>
+        <div class="tile"><span class="l" id="wuYL">Dernier jour</span><span class="v" id="wuY">—</span><span class="n" id="wuYN">&nbsp;</span></div>
         <div class="tile"><span class="l">Ce mois-ci</span><span class="v" id="wuM">—</span><span class="n" id="wuMN">&nbsp;</span></div>
       </div>
+      <div class="eauT">Par jour</div>
+      <p class="foot" id="wuDayMsg" hidden>Les barres par jour démarrent demain, avec l'index de minuit.</p>
       <div class="chart" id="cWu"></div>
       <div class="pick" id="cWuPick" aria-live="polite"></div>
+      <div class="eauT">Par mois</div>
       <div class="chart" id="cWuM"></div>
       <div class="pick" id="cWuMPick" aria-live="polite"></div>
       <p class="foot" id="wuNote" style="margin:0"></p>
@@ -1281,31 +1284,37 @@ $("refresh").onclick = () => { load(true, $("refresh")); if (tab === "hist" || H
 
 // ---------- Eau : conso relevée par le compteur (Jours / Releves de « HA données ») ----------
 function renderEauUse(){
-  const J = (D && D.eauJ) || [], now = D && D.eauNow, mStr = (D && D.eauM) || "";
+  const J = (D && D.eauJ) || [], now = D && D.eauNow, raw = (D && D.eauM) || "";
+  const [mStr, baseStr] = raw.split("|"), base = +baseStr || null;
   const days = [];
   for (let i = 1; i < J.length; i++){ const [d, v] = J[i], p = J[i - 1][1]; if (v >= p && dDiff(J[i - 1][0], d) === 1) days.push({d, L: v - p}); }
-  const mo = mStr.split(";").map(Number).filter(x => x > 0);
+  const mo = (mStr || "").split(";").map(Number).filter(x => x > 0);
   $("wUse").hidden = !days.length && !mo.length && !now;
   if ($("wUse").hidden) return;
   const fL = v => ok_(v) ? (v >= 1000 ? fr(v / 1000, 2) + " m³" : fr(v, 0) + " L") : "—";
-  const y = days[days.length - 1];
-  $("wuY").textContent = y ? fL(y.L) : "—";
-  $("wuYN").textContent = y ? shortDay(y.d) : "lecture chaque matin";
-  const mk = (D.today || "").slice(0, 7), inM = days.filter(x => x.d.slice(0, 7) === mk);
-  const lastIx = J.length ? J[J.length - 1] : null, startM = J.filter(r => r[0] < mk + "-01").pop();
-  const mUse = startM && now ? now[1] - startM[1] : (inM.length ? inM.reduce((a, b) => a + b.L, 0) : null);
+  const nowD = now ? new Date(now[0] * 60000) : null;
+  // Tuile 1 : dernier jour complet, sinon depuis le dernier index de minuit
+  const y = days[days.length - 1], lastJ = J[J.length - 1];
+  if (y){ $("wuY").textContent = fL(y.L); $("wuYN").textContent = shortDay(y.d); $("wuYL").textContent = "Dernier jour"; }
+  else if (lastJ && now && now[1] >= lastJ[1]){ $("wuY").textContent = fL(now[1] - lastJ[1]); $("wuYN").textContent = `depuis le ${shortDay(lastJ[0])}`; $("wuYL").textContent = "Dernière lecture"; }
+  else { $("wuY").textContent = "—"; $("wuYN").textContent = "lecture chaque matin"; }
+  // Tuile 2 : mois en cours = index actuel − index au 1er (fourni par le compteur)
+  const mUse = now && base && now[1] >= base ? now[1] - base : null;
   $("wuM").textContent = fL(mUse);
-  $("wuMN").textContent = startM && now ? "depuis le 1er" : (inM.length ? `${inM.length} j relevés` : " ");
+  const dIn = nowD ? nowD.getDate() : 0;
+  $("wuMN").textContent = mUse != null && dIn ? `${fr(mUse / dIn, 0)} L/jour` : " ";
   if (days.length){
+    $("cWu").hidden = false; $("wuDayMsg").hidden = true;
     const it = days.slice(-30).map(x => ({key: x.d, label: x.d.slice(8, 10), v: {L: x.L}, x}));
     barChart($("cWu"), it, [{key: "L", color: "#4D8DFF"}], {unit: " L", aria: "Eau consommée par jour", onPick: o => pickTable($("cWuPick"), [["Jour", shortDay(o.x.d)], ["Eau", fL(o.x.L)]])});
-  } else { $("cWu").innerHTML = '<p class="empty">Le détail par jour arrive avec les prochaines lectures.</p>'; $("cWuPick").innerHTML = ""; }
+  } else { $("cWu").hidden = true; $("cWuPick").innerHTML = ""; $("wuDayMsg").hidden = false; }
   if (mo.length && D.eauMd){
-    const ref = D.eauMd.slice(0, 7), base = new Date(+ref.slice(0, 4), +ref.slice(5, 7) - 1, 1);
-    const it = mo.map((v, i) => { const dt = new Date(base.getFullYear(), base.getMonth() - (mo.length - i), 1), k = dt.getFullYear() + "-" + String(dt.getMonth() + 1).padStart(2, "0"); return {key: k, label: MOIS[dt.getMonth()].slice(0, 3), v: {L: v / 1000}, k, L: v}; });
-    barChart($("cWuM"), it, [{key: "L", color: "#5FD3A0"}], {unit: " m³", aria: "Eau consommée par mois", onPick: o => pickTable($("cWuMPick"), [["Mois", moFr(o.k)], ["Eau", fL(o.L)], ["Par jour", fr(o.L / 30.4, 0) + " L"]])});
+    const ref = D.eauMd.slice(0, 7), y0 = +ref.slice(0, 4), m0 = +ref.slice(5, 7) - 1;
+    const it = mo.map((v, i) => { const dt = new Date(y0, m0 - (mo.length - i), 1), k = dt.getFullYear() + "-" + String(dt.getMonth() + 1).padStart(2, "0"), nd = new Date(dt.getFullYear(), dt.getMonth() + 1, 0).getDate(); return {key: k, label: MOIS[dt.getMonth()].slice(0, 4), v: {L: v / 1000}, k, L: v, nd}; });
+    if (mUse != null){ const dt = new Date(y0, m0, 1), k = ref; it.push({key: k, label: MOIS[m0].slice(0, 4) + "…", v: {L: mUse / 1000}, k, L: mUse, nd: dIn || 1, cur: true}); }
+    barChart($("cWuM"), it, [{key: "L", color: "#5FD3A0"}], {unit: " m³", aria: "Eau consommée par mois", onPick: o => pickTable($("cWuMPick"), [["Mois", moFr(o.k) + (o.cur ? "<small>en cours</small>" : "")], ["Eau", fL(o.L)], ["Par jour", fr(o.L / o.nd, 0) + " L"]])});
   }
-  $("wuNote").textContent = (now ? `Index ${fr(now[1] / 1000, 3)} m³. ` : "") + "Compteur lu par Home Assistant chaque matin de semaine. Barres bleues : par jour ; vertes : par mois.";
+  $("wuNote").textContent = (now ? `Index ${fr(now[1] / 1000, 3)} m³ (lu ${nowD.toLocaleDateString("fr-FR", {day: "numeric", month: "numeric"})}). ` : "") + "Compteur lu chaque matin de semaine. Bleu : par jour ; vert : par mois.";
 }
 // ---------- Eau : factures CCFU (onglet Eau_Factures de « HA données ») ----------
 // Relevé du compteur en janvier et en juillet, facture 3 à 4 mois après. Provision mensuelle : cellule « Provision mensuelle ».
