@@ -433,7 +433,7 @@ function poele_(S) {
     }
     return { k: k, h: h == null ? null : r2_(h), r: ranges, n: rs.length };
   };
-  return { today: day(S.today, true), yest: day(addDays_(S.today, -1), false) };
+  return { today: day(S.today, true), yest: day(addDays_(S.today, -1), false), kg: num_(S.lastVals.Poele_restant_kg), kgMax: 16 };
 }
 /* Onglet Solaire : production et gain par jour depuis l'installation, prévision de demain et météo (colonnes des Releves repérées par leur en-tête) */
 function sol_(S) {

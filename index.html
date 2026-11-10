@@ -539,6 +539,12 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
 
   <!-- POÊLE -->
   <div class="view" id="vPoele" hidden>
+    <section class="block" id="tremSec" hidden>
+      <h2>Granulés dans le poêle</h2>
+      <div class="gauge" role="img" id="tremGauge"><i id="tremBar"></i><b id="tremTxt"></b></div>
+      <div id="tremRows"></div>
+      <p class="foot" id="tremNote" style="margin:0"></p>
+    </section>
     <section class="block" id="pelFormSec">
       <h2>Sacs de granulés</h2>
       <form id="fPel" novalidate>
@@ -949,7 +955,7 @@ function render(d){
   D = d;
   if (d.role && d.role !== role){ role = d.role; ls.set("role", role); }
   applyRole();
-  const parts = [renderNow, renderCurve, renderYest, renderToday, renderMonth, renderCmp, renderPel, renderAbout, renderFact, renderFacture, renderSolar, renderPoele, renderPoeleJ, renderEauFac, renderEauUse].concat(role === "owner" ? [renderTarifs, renderLog] : []);
+  const parts = [renderNow, renderCurve, renderYest, renderToday, renderMonth, renderCmp, renderPel, renderAbout, renderFact, renderFacture, renderSolar, renderPoele, renderPoeleJ, renderEauFac, renderEauUse, renderTrem].concat(role === "owner" ? [renderTarifs, renderLog] : []);
   for (const f of parts){ try{ f(); }catch(e){ console.error(e); } }
   if (d.errs && d.errs.length) note("Une partie des chiffres manque : " + d.errs.join(" ; "), true);
 }
@@ -1231,6 +1237,22 @@ function renderPoeleJ(){
     barChart($("cPoele"), items, [{key: "h", color: "#F5B83D"}], {stack: true, unit: " h", every: items.length > 14 ? 3 : 1, aria: "Heures de marche du poêle par jour",
       onPick: it => pickTable($("cPoelePick"), [["Jour", `${shortDay(it.d.k)}<small> </small>`], ["Marche", hrs(it.d.ph)], ["Heures", fr(it.d.ph, 1)]])});
   }
+}
+function renderTrem(){
+  const P = D && D.poele, kg = P && P.kg, max = (P && P.kgMax) || 16;
+  $("tremSec").hidden = !ok_(kg);
+  if ($("tremSec").hidden) return;
+  const pct = Math.max(0, Math.min(1, kg / max)), low = kg < 3;
+  $("tremBar").style.width = (pct * 100).toFixed(0) + "%";
+  $("tremBar").style.background = low ? "#FF6B5E" : kg < 6 ? "#F5B83D" : "#5FD3A0";
+  $("tremTxt").textContent = `${fr(kg, 1)} kg sur ${max} · ${fr(pct * 100, 0)} %`;
+  $("tremGauge").setAttribute("aria-label", `Trémie : ${fr(kg, 1)} kg sur ${max}`);
+  const hP2 = kg / 0.85, hP5 = kg / 1.6;
+  $("tremRows").innerHTML = [
+    line(`Autonomie<small>de la puissance 5 (1,6 kg/h) à la 2 (0,85 kg/h)</small>`, `${fr(hP5, 0)} à ${fr(hP2, 0)} h`, " "),
+    line(low ? "À remplir<small>moins de 3 kg</small>" : "Recharge<small>pour remplir la trémie</small>", " ", `${fr(Math.ceil((max - kg) / 15 * 10) / 10, 1)} sac`, {cls: low ? "down" : ""})
+  ].join("");
+  $("tremNote").textContent = "Estimation de Home Assistant d'après la marche et la puissance du poêle, remise à 16 kg quand tu ouvres un sac.";
 }
 function renderChauf(){
   const C = H && H.chauf, el = $("chaufRows");
