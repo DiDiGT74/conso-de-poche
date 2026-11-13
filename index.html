@@ -697,6 +697,7 @@ const JOURS = ["dimanche","lundi","mardi","mercredi","jeudi","vendredi","samedi"
 const dOf = k => new Date(Date.UTC(+k.slice(0,4), +k.slice(5,7)-1, +k.slice(8,10)));
 const dayName = k => { const d = dOf(k); return `${JOURS[d.getUTCDay()]} ${d.getUTCDate()} ${MOIS[d.getUTCMonth()]}`; };
 const shortDay = k => `${+k.slice(8,10)}/${k.slice(5,7)}`;
+const dow3 = k => ["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"][new Date(+k.slice(0,4), +k.slice(5,7)-1, +k.slice(8,10)).getDay()];
 const hm = t => new Date(t).toLocaleTimeString("fr-FR", {hour:"2-digit", minute:"2-digit"});
 const todayKey = () => { const n = new Date(); return `${n.getFullYear()}-${pad2(n.getMonth()+1)}-${pad2(n.getDate())}`; };
 const addDays = (k, n) => { const d = dOf(k); d.setUTCDate(d.getUTCDate()+n); return `${d.getUTCFullYear()}-${pad2(d.getUTCMonth()+1)}-${pad2(d.getUTCDate())}`; };
@@ -1345,7 +1346,7 @@ function renderEauUse(){
   const nowD = now ? new Date(now[0] * 60000) : null;
   // Tuile 1 : dernier jour complet, sinon depuis le dernier index de minuit
   const y = days[days.length - 1], lastJ = J[J.length - 1];
-  if (y){ $("wuY").textContent = fL(y.L); $("wuYN").textContent = shortDay(y.d) + (y.n > 1 ? ` (moyenne sur ${y.n} j)` : ""); $("wuYL").textContent = "Dernier jour"; }
+  if (y){ $("wuY").textContent = fL(y.L); $("wuYN").textContent = dow3(y.d) + " " + shortDay(y.d) + (y.n > 1 ? ` (moyenne sur ${y.n} j)` : ""); $("wuYL").textContent = "Dernier jour"; }
   else if (lastJ && now && now[1] >= lastJ[1]){ $("wuY").textContent = fL(now[1] - lastJ[1]); $("wuYN").textContent = `depuis le ${shortDay(lastJ[0])}`; $("wuYL").textContent = "Dernière lecture"; }
   else { $("wuY").textContent = "—"; $("wuYN").textContent = "lecture chaque matin"; }
   // Tuile 2 : mois en cours = index actuel − index au 1er (fourni par le compteur)
@@ -1355,8 +1356,8 @@ function renderEauUse(){
   $("wuMN").textContent = mUse != null && dIn ? `${fr(mUse / dIn, 0)} L/jour` : " ";
   if (days.length){
     $("cWu").hidden = false; $("wuDayMsg").hidden = true;
-    const it = days.slice(-30).map(x => ({key: x.d, label: x.d.slice(8, 10), v: {L: x.L}, x}));
-    barChart($("cWu"), it, [{key: "L", color: "#4D8DFF"}], {unit: " L", aria: "Eau consommée par jour", onPick: o => pickTable($("cWuPick"), [["Jour", shortDay(o.x.d) + (o.x.n > 1 ? `<small>moyenne sur ${o.x.n} j</small>` : "")], ["Eau", fL(o.x.L)]])});
+    const it = days.slice(-30).map(x => ({key: x.d, label: dow3(x.d) + " " + x.d.slice(8, 10), v: {L: x.L}, x}));
+    barChart($("cWu"), it, [{key: "L", color: "#4D8DFF"}], {unit: " L", aria: "Eau consommée par jour", onPick: o => pickTable($("cWuPick"), [["Jour", dow3(o.x.d) + " " + shortDay(o.x.d) + (o.x.n > 1 ? `<small>moyenne sur ${o.x.n} j</small>` : "")], ["Eau", fL(o.x.L)]])});
   } else { $("cWu").hidden = true; $("cWuPick").innerHTML = ""; $("wuDayMsg").hidden = false; }
   if (mo.length && D.eauMd){
     const ref = D.eauMd.slice(0, 7), y0 = +ref.slice(0, 4), m0 = +ref.slice(5, 7) - 1;
