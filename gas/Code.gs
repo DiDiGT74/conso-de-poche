@@ -589,26 +589,31 @@ function seasons_(S) {
     return { n: n, toDate: toDate, full: full };
   });
 }
+function monthDev_(S, first, y) {
+  const m = sumDays_(S, first, y), avg = m.kwh ? m.eur / m.kwh : 0;
+  const dev = {}; let tesla = 0, n = 0;
+  for (let k = first; k <= y; k = addDays_(k, 1)) {
+    const d = day_(S, k); if (!d) continue;
+    n++; tesla += d.tesla || 0;
+    if (d.dev) DEVICES.forEach(dd => { if (d.dev[dd[0]] != null) dev[dd[0]] = (dev[dd[0]] || 0) + d.dev[dd[0]]; });
+  }
+  if (!n) return null;
+  const total = m.kwh + m.sol;
+  let known = tesla;
+  const list = DEVICES.filter(dd => dev[dd[0]] != null).map(dd => { known += dev[dd[0]]; return { name: dd[1], kwh: dev[dd[0]], eur: dev[dd[0]] * avg, key: dd[0] }; });
+  if (tesla) list.push({ name: 'Tesla (recharge)', kwh: tesla, eur: tesla * avg, key: 'tesla' });
+  list.sort((a, b) => b.kwh - a.kwh);
+  list.push({ name: 'Non identifié', kwh: Math.max(0, total - known), eur: Math.max(0, total - known) * avg });
+  list.forEach(l => { l.share = total ? l.kwh / total : 0; });
+  list.unshift({ name: 'Conso maison (réseau + solaire)', kwh: total, eur: m.eur, tot: true, sub: 'dont ' + Math.round(m.sol) + ' kWh de solaire' });
+  return { avg: avg, list: list };
+}
 function devices_(S) {
   const out = { ha: null, suivi: [] };
   const first = S.today.slice(0, 8) + '01', y = addDays_(S.today, -1);
   if (y >= first) {
-    const m = sumDays_(S, first, y), avg = m.kwh ? m.eur / m.kwh : 0;
-    const dev = {}; let tesla = 0;
-    for (let k = first; k <= y; k = addDays_(k, 1)) {
-      const d = day_(S, k); if (!d) continue;
-      tesla += d.tesla || 0;
-      if (d.dev) DEVICES.forEach(dd => { if (d.dev[dd[0]] != null) dev[dd[0]] = (dev[dd[0]] || 0) + d.dev[dd[0]]; });
-    }
-    const total = m.kwh + m.sol;
-    let known = tesla;
-    let list = DEVICES.filter(dd => dev[dd[0]] != null).map(dd => { known += dev[dd[0]]; return { name: dd[1], kwh: dev[dd[0]], eur: dev[dd[0]] * avg, key: dd[0] }; });
-    if (tesla) list.push({ name: 'Tesla (recharge)', kwh: tesla, eur: tesla * avg, key: 'tesla' });
-    list.sort((a, b) => b.kwh - a.kwh);
-    list.push({ name: 'Non identifié', kwh: Math.max(0, total - known), eur: Math.max(0, total - known) * avg });
-    list.forEach(l => { l.share = total ? l.kwh / total : 0; });
-    list.unshift({ name: 'Conso maison (réseau + solaire)', kwh: total, eur: m.eur, tot: true, sub: 'dont ' + Math.round(m.sol) + ' kWh de solaire' });
-    out.ha = { label: MOIS[+S.today.slice(5, 7) - 1] + ' ' + S.today.slice(0, 4) + ' (en cours, Home Assistant)', to: +y.slice(8), avg: r4_(avg), list: list.map(roundLine_) };
+    const r = monthDev_(S, first, y);
+    if (r) out.ha = { label: MOIS[+S.today.slice(5, 7) - 1] + ' ' + S.today.slice(0, 4) + ' (en cours, Home Assistant)', to: +y.slice(8), avg: r4_(r.avg), list: r.list.map(roundLine_) };
   }
   if (S.suivi) {
     const names = [];
@@ -629,6 +634,24 @@ function devices_(S) {
       if (totE) list.push({ name: 'Total dépensé (électricité + granulés)', kwh: null, eur: num_(totE[4]), tot: true });
       return { name: name, list: list.map(roundLine_) };
     });
+  }
+  // Mois terminés absents du « Suivi mensuel » (tâche mensuelle sautée) : calculés depuis l'onglet Jours
+  const have = {}; out.suivi.forEach(o => { have[String(o.name).toLowerCase()] = 1; });
+  const days = (S.jours || []).map(j => j.day).filter(Boolean).sort();
+  if (days.length) {
+    let Y = +days[0].slice(0, 4), M = +days[0].slice(5, 7);
+    const extra = [];
+    while (true) {
+      const a = Y + '-' + pad2_(M) + '-01'; if (a >= first) break;
+      const b = Y + '-' + pad2_(M) + '-' + pad2_(daysInMonth_(Y, M)), name = MOIS[M - 1] + ' ' + Y;
+      if (!have[name] && b > days[0]) { const r = monthDev_(S, a, b); if (r) extra.push({ name: name + ' (Home Assistant)', ym: a, list: r.list.map(roundLine_) }); }
+      if (++M > 12) { M = 1; Y++; }
+    }
+    if (extra.length) {
+      const ymOf = n => { const p = String(n).toLowerCase().split(' '); const i = MOIS.indexOf(p[0]); return i < 0 ? '' : p[1] + '-' + pad2_(i + 1); };
+      out.suivi = out.suivi.concat(extra).sort((u, v) => (v.ym || ymOf(v.name)).localeCompare(u.ym || ymOf(u.name)));
+      out.suivi.forEach(o => { delete o.ym; });
+    }
   }
   return out;
 }
