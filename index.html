@@ -457,7 +457,8 @@ input,select{width:100%;min-width:0;font:inherit;font-size:16px;color:var(--ice)
   <!-- EAU -->
   <div class="view" id="vEau" hidden>
     <section class="block" id="wUse" hidden>
-      <h2>Ma conso d'eau</h2>
+      <div class="curvehead"><h2>Ma conso d'eau</h2>
+        <div class="seg" id="segW" role="group" aria-label="Unité"><button type="button" data-v="m3" aria-pressed="true">m³</button><button type="button" data-v="eur" aria-pressed="false">€</button></div></div>
       <div class="tiles">
         <div class="tile"><span class="l" id="wuYL">Dernier jour</span><span class="v" id="wuY">—</span><span class="n" id="wuYN">&nbsp;</span></div>
         <div class="tile"><span class="l">Ce mois-ci</span><span class="v" id="wuM">—</span><span class="n" id="wuMN">&nbsp;</span></div>
@@ -1325,6 +1326,11 @@ async function loadHist(force){
 $("refresh").onclick = () => { load(true, $("refresh")); if (tab === "hist" || H) loadHist(true); DV = null; if (!$("devSheet").hidden) loadDev(true).then(renderDev).catch(e => note(e.message, true)); else if (H) ensureDV(true); };
 
 
+let wUnit = ls.get("wUnit") || "m3";
+document.querySelectorAll("#segW button").forEach(b => {
+  b.setAttribute("aria-pressed", b.dataset.v === wUnit ? "true" : "false");
+  b.onclick = () => { wUnit = b.dataset.v; ls.set("wUnit", wUnit); document.querySelectorAll("#segW button").forEach(x => x.setAttribute("aria-pressed", x === b ? "true" : "false")); if (D) renderEauUse(); };
+});
 // ---------- Eau : conso relevée par le compteur (Jours / Releves de « HA données ») ----------
 function renderEauUse(){
   const J = (D && D.eauJ) || [], now = D && D.eauNow, raw = (D && D.eauM) || "";
@@ -1342,7 +1348,11 @@ function renderEauUse(){
   const mo = (mStr || "").split(";").map(Number).filter(x => x > 0);
   $("wUse").hidden = !days.length && !mo.length && !now;
   if ($("wUse").hidden) return;
-  const fL = v => ok_(v) ? (v >= 1000 ? fr(v / 1000, 2) + " m³" : fr(v, 0) + " L") : "—";
+  const pm = (eauParse(D && D.eau) || {}).ttc, inE = wUnit === "eur" && pm > 0;
+  $("segW").hidden = !(pm > 0);
+  const fV = v => ok_(v) ? (v >= 1000 ? fr(v / 1000, 2) + " m³" : fr(v, 0) + " L") : "—";
+  const fC = v => ok_(v) && pm > 0 ? fE(v / 1000 * pm) : "—";
+  const fL = v => inE ? fC(v) : fV(v);
   const nowD = now ? new Date(now[0] * 60000) : null;
   // Tuile 1 : dernier jour complet, sinon depuis le dernier index de minuit
   const y = days[days.length - 1], lastJ = J[J.length - 1];
@@ -1353,19 +1363,19 @@ function renderEauUse(){
   const mUse = now && base && now[1] >= base ? now[1] - base : null;
   $("wuM").textContent = fL(mUse);
   const dIn = nowD ? nowD.getDate() : 0;
-  $("wuMN").textContent = mUse != null && dIn ? `${fr(mUse / dIn, 0)} L/jour` : " ";
+  $("wuMN").textContent = mUse != null && dIn ? (inE ? `${fC(mUse / dIn)}/jour` : `${fr(mUse / dIn, 0)} L/jour`) : " ";
   if (days.length){
     $("cWu").hidden = false; $("wuDayMsg").hidden = true;
-    const it = days.slice(-30).map(x => ({key: x.d, label: dow3(x.d) + " " + x.d.slice(8, 10), v: {L: x.L}, x}));
-    barChart($("cWu"), it, [{key: "L", color: "#4D8DFF"}], {unit: " L", aria: "Eau consommée par jour", onPick: o => pickTable($("cWuPick"), [["Jour", dow3(o.x.d) + " " + shortDay(o.x.d) + (o.x.n > 1 ? `<small>moyenne sur ${o.x.n} j</small>` : "")], ["Eau", fL(o.x.L)]])});
+    const it = days.slice(-30).map(x => ({key: x.d, label: dow3(x.d) + " " + x.d.slice(8, 10), v: {L: inE ? x.L / 1000 * pm : x.L}, x}));
+    barChart($("cWu"), it, [{key: "L", color: "#4D8DFF"}], {unit: inE ? " €" : " L", money: inE, aria: "Eau consommée par jour", onPick: o => pickTable($("cWuPick"), [["Jour", dow3(o.x.d) + " " + shortDay(o.x.d) + (o.x.n > 1 ? `<small>moyenne sur ${o.x.n} j</small>` : "")], ["Eau", fV(o.x.L)], ["Coût", fC(o.x.L), true]])});
   } else { $("cWu").hidden = true; $("cWuPick").innerHTML = ""; $("wuDayMsg").hidden = false; }
   if (mo.length && D.eauMd){
     const ref = D.eauMd.slice(0, 7), y0 = +ref.slice(0, 4), m0 = +ref.slice(5, 7) - 1;
-    const it = mo.map((v, i) => { const dt = new Date(y0, m0 - (mo.length - i), 1), k = dt.getFullYear() + "-" + String(dt.getMonth() + 1).padStart(2, "0"), nd = new Date(dt.getFullYear(), dt.getMonth() + 1, 0).getDate(); return {key: k, label: MOIS[dt.getMonth()].slice(0, 4), v: {L: v / 1000}, k, L: v, nd}; });
-    if (mUse != null){ const dt = new Date(y0, m0, 1), k = ref; it.push({key: k, label: MOIS[m0].slice(0, 4) + "…", v: {L: mUse / 1000}, k, L: mUse, nd: dIn || 1, cur: true}); }
-    barChart($("cWuM"), it, [{key: "L", color: "#5FD3A0"}], {unit: " m³", aria: "Eau consommée par mois", onPick: o => pickTable($("cWuMPick"), [["Mois", moFr(o.k) + (o.cur ? "<small>en cours</small>" : "")], ["Eau", fL(o.L)], ["Par jour", fr(o.L / o.nd, 0) + " L"]])});
+    const it = mo.map((v, i) => { const dt = new Date(y0, m0 - (mo.length - i), 1), k = dt.getFullYear() + "-" + String(dt.getMonth() + 1).padStart(2, "0"), nd = new Date(dt.getFullYear(), dt.getMonth() + 1, 0).getDate(); return {key: k, label: MOIS[dt.getMonth()].slice(0, 4), v: {L: inE ? v / 1000 * pm : v / 1000}, k, L: v, nd}; });
+    if (mUse != null){ const dt = new Date(y0, m0, 1), k = ref; it.push({key: k, label: MOIS[m0].slice(0, 4) + "…", v: {L: inE ? mUse / 1000 * pm : mUse / 1000}, k, L: mUse, nd: dIn || 1, cur: true}); }
+    barChart($("cWuM"), it, [{key: "L", color: "#5FD3A0"}], {unit: inE ? " €" : " m³", money: inE, aria: "Eau consommée par mois", onPick: o => pickTable($("cWuMPick"), [["Mois", moFr(o.k) + (o.cur ? "<small>en cours</small>" : "")], ["Eau", fV(o.L)], ["Coût", fC(o.L), true], ["Par jour", fr(o.L / o.nd, 0) + " L"]])});
   }
-  $("wuNote").textContent = (now ? `Index ${fr(now[1] / 1000, 3)} m³ (lu ${nowD.toLocaleDateString("fr-FR", {day: "numeric", month: "numeric"})}). ` : "") + "Compteur lu chaque matin de semaine. Bleu : par jour ; vert : par mois.";
+  $("wuNote").textContent = (now ? `Index ${fr(now[1] / 1000, 3)} m³ (lu ${nowD.toLocaleDateString("fr-FR", {day: "numeric", month: "numeric"})}). ` : "") + "Compteur lu chaque matin de semaine. Bleu : par jour ; vert : par mois." + (pm > 0 ? ` Coût : ${fr(pm, 2)} €/m³ TTC (part variable de la dernière facture, sans l'abonnement).` : "");
 }
 // ---------- Eau : factures CCFU (onglet Eau_Factures de « HA données ») ----------
 // Relevé du compteur en janvier et en juillet, facture 3 à 4 mois après. Provision mensuelle : cellule « Provision mensuelle ».
